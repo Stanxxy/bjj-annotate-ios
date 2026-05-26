@@ -15,16 +15,18 @@ actor ThumbnailCache {
         countLimit: Int = 512,
         totalCostLimit: Int = 64 * 1024 * 1024,
         requestSizePoints: CGFloat = 256,
-        scale: CGFloat? = nil
+        scale: CGFloat = 2.0
     ) {
         let cache = NSCache<NSString, UIImage>()
         cache.countLimit = countLimit
         cache.totalCostLimit = totalCostLimit
         self.cache = cache
         self.requestSizePoints = requestSizePoints
-        // Avoid touching `UIScreen.main.scale` from arbitrary actor contexts (it requires
-        // main-thread access on some iOS versions); default to 2x and let the caller override.
-        self.scale = scale ?? 2.0
+        // `scale` is the render scale to bake into QLThumbnailGenerator requests. Production
+        // passes `UIScreen.main.scale` captured at app launch on the main actor (see
+        // `BJJAnnotateApp.init`). The 2.0 default is for tests and Xcode Previews ONLY —
+        // it must NEVER be the value used at runtime on a @3x device. Minor #10 / AIP §4.
+        self.scale = scale
     }
 
     /// Returns a thumbnail for `url`, generating + caching on miss. Returns nil for unsupported

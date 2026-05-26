@@ -31,9 +31,14 @@ final class EmptyGridUITests: XCTestCase {
         XCTAssertTrue(copyAnchor.firstMatch.waitForExistence(timeout: 5),
                       "Empty-folder grid PM copy not visible. Tree:\n\(app.debugDescription)")
 
-        // Pull-to-refresh affordance lives on the empty state ScrollView; assert the empty
-        // state container exists by accessibility identifier.
-        XCTAssertTrue(app.otherElements["ProjectGrid.EmptyState"].waitForExistence(timeout: 2),
-                      "Empty-state container missing identifier ProjectGrid.EmptyState.")
+        // Pull-to-refresh affordance lives on the empty state ScrollView. SwiftUI sometimes
+        // surfaces the identifier on a containing scroll view rather than `otherElements`;
+        // look in both buckets before failing.
+        let byOther = app.otherElements["ProjectGrid.EmptyState"]
+        let byScroll = app.scrollViews["ProjectGrid.EmptyState"]
+        XCTAssertTrue(
+            byOther.exists || byScroll.exists,
+            "Empty-state container missing identifier ProjectGrid.EmptyState. Tree:\n\(app.debugDescription)"
+        )
     }
 }
