@@ -35,8 +35,8 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Expected: `Executed 26 tests, with 0 failures` (BJJAnnotateTests) and
-`Executed 1 test, with 0 failures` (BJJAnnotateUITests).
+Expected: `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
+`Executed 4 tests, with 0 failures` (BJJAnnotateUITests).
 
 ## 3. Phase 0 PM verification — device-only criteria
 
@@ -78,3 +78,35 @@ The app accepts `--uitest-reset` as a launch argument to allocate a private
    bookmarks.
 
 Remove the flag before normal device usage.
+
+### Additional UI-test seed flags (evaluator findings #1 / #2)
+
+These are additive with `--uitest-reset` and pre-populate the in-memory
+`BookmarkStore` with one synthesized bookmark so XCUITests can land directly
+on a non-empty state without driving `UIDocumentPickerViewController`:
+
+| Flag | Effect |
+|------|--------|
+| `--uitest-seed-empty-folder` | Creates a fresh tmp directory, saves a bookmark to it. List shows one row; tapping into the grid lands on the empty-folder state. Used by `EmptyGridUITests` and `PopulatedListNoBottomCTAUITests`. |
+| `--uitest-seed-missing-bookmark` | Saves a bookmark, then deletes the underlying directory. List renders the locked relocate row. Used by `BookmarkErrorRowUITests`. |
+
+Both seed flags are wired in `BJJAnnotate/App/BJJAnnotateApp.swift` →
+`Self.applyUITestSeeds(args:into:)`. They are no-ops outside of UI-test
+runs (no production code path references them).
+
+## 6. TDD authoring-order attestation (evaluator finding #8, process)
+
+Phase 0 evaluator finding #8 noted that the first-pass commits bundled tests
+and implementations in the same `feat:` commit, so the red-green sequence
+could not be audited from `git log`. The fix commits for findings #1–#7
+restored the discipline:
+
+- Commit `79ee570 test(phase-0): add failing red tests for evaluator findings 1-7`
+  introduces six new test files that reference symbols
+  (`BookmarkResolving`, `BookmarkStore.lastError`, `ProjectGridViewModel.displayName`,
+  the two seed launch-arg branches) that **do not yet exist**. The commit
+  was verified to fail at build time before being landed.
+- Subsequent `feat:` / `fix:` commits make the red tests green.
+
+Going forward (Phase 1+), every test commit lands BEFORE the implementation
+commit that satisfies it. The evaluator validates by diffing commit order.
