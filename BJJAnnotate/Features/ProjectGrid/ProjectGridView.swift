@@ -26,7 +26,7 @@ struct ProjectGridView: View {
                 errorState(message: message)
             }
         }
-        .navigationTitle(viewModel.folderDisplayName)
+        .navigationTitle(viewModel.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
