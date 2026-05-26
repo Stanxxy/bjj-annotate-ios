@@ -1,0 +1,35 @@
+# Xcode build artifacts
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Package manager
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Coverage / test reports
+*.xcresult
+coverage/
+
+# Swift PM
+.build/
+
+# fastlane (not used yet, future-proof)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# XcodeGen output is checked in by design — do NOT ignore BJJAnnotate.xcodeproj

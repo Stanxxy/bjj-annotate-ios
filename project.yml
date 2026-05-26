@@ -1,0 +1,82 @@
+name: BJJAnnotate
+options:
+  bundleIdPrefix: com.stanxxy
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  defaultConfig: Debug
+  groupSortPosition: top
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGNING_ALLOWED: NO
+targets:
+  BJJAnnotate:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: BJJAnnotate
+    resources:
+      - path: BJJAnnotate/Assets.xcassets
+        optional: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stanxxy.bjjannotate
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        ENABLE_PREVIEWS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  BJJAnnotateTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: BJJAnnotateTests
+    dependencies:
+      - target: BJJAnnotate
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stanxxy.bjjannotate.tests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/BJJAnnotate.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BJJAnnotate"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TARGETED_DEVICE_FAMILY: "1,2"
+  BJJAnnotateUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: BJJAnnotateUITests
+    dependencies:
+      - target: BJJAnnotate
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stanxxy.bjjannotate.uitests
+        TEST_TARGET_NAME: BJJAnnotate
+        TARGETED_DEVICE_FAMILY: "1,2"
+schemes:
+  BJJAnnotate:
+    build:
+      targets:
+        BJJAnnotate: all
+        BJJAnnotateTests: [test]
+        BJJAnnotateUITests: [test]
+    test:
+      targets:
+        - BJJAnnotateTests
+        - BJJAnnotateUITests
+    run:
+      config: Debug
