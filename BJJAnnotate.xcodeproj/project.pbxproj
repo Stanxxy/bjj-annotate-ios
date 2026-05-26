@@ -12,19 +12,25 @@
 		0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5869831EB1FFDAC97621E4DD /* BJJAnnotateApp.swift */; };
 		0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */; };
 		1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */; };
+		21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */; };
 		30A0C4B344E8A6BB356F0AEA /* ProjectGridViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */; };
 		311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */; };
 		364AE88F8191C641174738D7 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */; };
+		3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */; };
 		629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */; };
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
 		7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */; };
+		81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */; };
 		8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */; };
 		8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */; };
+		96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */; };
 		9C968F935137A673628FF18F /* TempDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A33EA1993E0357A341B8A /* TempDirectory.swift */; };
 		A8A40445F027970D872F10A1 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767327C9556EE79353400DC2 /* ThumbnailCache.swift */; };
 		AABEA31A104F4F0D76FACCD0 /* ThumbnailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */; };
 		B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */; };
+		B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */; };
 		BC4EDE80FC6008DB7DBFC539 /* ProjectGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6195F0387F9674703C28B151 /* ProjectGridView.swift */; };
+		D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */; };
 		EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */; };
 		FE8620E08954C0AC4BF6BA55 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3376543D524E01493327E56 /* RootView.swift */; };
 		FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */; };
@@ -58,20 +64,26 @@
 		52A5AF26D346679D28F6BDA7 /* BJJAnnotateUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BJJAnnotateUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreTests.swift; sourceTree = "<group>"; };
 		5869831EB1FFDAC97621E4DD /* BJJAnnotateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BJJAnnotateApp.swift; sourceTree = "<group>"; };
+		5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkErrorRowUITests.swift; sourceTree = "<group>"; };
 		6195F0387F9674703C28B151 /* ProjectGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridView.swift; sourceTree = "<group>"; };
+		6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreErrorSurfacingTests.swift; sourceTree = "<group>"; };
 		7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCacheTests.swift; sourceTree = "<group>"; };
 		767327C9556EE79353400DC2 /* ThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
 		7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPickerTests.swift; sourceTree = "<group>"; };
 		7E1A33EA1993E0357A341B8A /* TempDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempDirectory.swift; sourceTree = "<group>"; };
 		8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyTests.swift; sourceTree = "<group>"; };
+		90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModelTests.swift; sourceTree = "<group>"; };
 		9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModel.swift; sourceTree = "<group>"; };
+		9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyGridUITests.swift; sourceTree = "<group>"; };
 		9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderTests.swift; sourceTree = "<group>"; };
 		A2E04776E5022074A20F06C2 /* BJJAnnotate.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BJJAnnotate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
 		E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCell.swift; sourceTree = "<group>"; };
 		F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeUITests.swift; sourceTree = "<group>"; };
 		F3376543D524E01493327E56 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreStaleRefreshTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -119,10 +131,13 @@
 			isa = PBXGroup;
 			children = (
 				EF717120E3F27BB752771A7A /* Support */,
+				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
+				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
 				9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */,
+				90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */,
 				4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */,
 				7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */,
 			);
@@ -172,6 +187,9 @@
 		E1E18FA839E899759F695208 /* BJJAnnotateUITests */ = {
 			isa = PBXGroup;
 			children = (
+				5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */,
+				9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */,
+				BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */,
 				F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */,
 			);
 			path = BJJAnnotateUITests;
@@ -319,10 +337,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
+				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
 				8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */,
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
 				8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */,
+				D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */,
 				311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */,
 				9C968F935137A673628FF18F /* TempDirectory.swift in Sources */,
 				1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */,
@@ -333,6 +354,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */,
+				81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */,
+				3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */,
 				7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
