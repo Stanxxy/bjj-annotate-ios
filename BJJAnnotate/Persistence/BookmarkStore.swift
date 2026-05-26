@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 /// A persisted, security-scoped folder bookmark.
 ///
@@ -28,6 +29,55 @@ enum BookmarkResolutionError: Error, Equatable {
     case foundation(String)
 }
 
+/// Non-blocking error state surfaced by `BookmarkStore` to the UI. Evaluator findings #4/#5:
+/// silent `try?` swallows are forbidden; persistence faults must surface so the UI can banner
+/// and the user can recover.
+enum BookmarkStoreError: Error, Equatable {
+    /// `loadAll()` could not decode the stored blob. UI should banner; the corrupt bytes are
+    /// preserved in `UserDefaults` (we do NOT overwrite on read) so a debugger can inspect.
+    case decodeFailed(description: String)
+    /// `persist(_:)` could not encode the in-memory bookmark list. With the current
+    /// `StoredBookmark` schema this is unreachable, but the case exists so a future schema
+    /// change has a typed surface to raise on instead of swallowing.
+    case encodeFailed(description: String)
+    /// Stale-refresh path tried to re-mint a bookmark and failed. Original bookmark is
+    /// preserved so the user can still navigate; the failure is logged and surfaced.
+    case staleRefreshFailed(description: String)
+}
+
+/// Seam for `URL(resolvingBookmarkData:bookmarkDataIsStale:)` + `URL.bookmarkData(options:)`.
+/// Allows tests to inject a stale-bookmark scenario without provoking iOS-internal staleness
+/// (Finding #7 / AIP §7 R9).
+protocol BookmarkResolving {
+    /// Resolves a stored bookmark blob to a URL, reporting whether iOS considers it stale.
+    func resolve(data: Data) throws -> (url: URL, isStale: Bool)
+    /// Re-mints a security-scoped bookmark for the given URL. Caller has already started
+    /// security-scoped access.
+    func mintBookmark(for url: URL) throws -> Data
+}
+
+/// Production resolver using Foundation's URL bookmark APIs.
+struct SystemBookmarkResolver: BookmarkResolving {
+    func resolve(data: Data) throws -> (url: URL, isStale: Bool) {
+        var stale = false
+        let url = try URL(
+            resolvingBookmarkData: data,
+            options: [.withoutUI],
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        )
+        return (url, stale)
+    }
+
+    func mintBookmark(for url: URL) throws -> Data {
+        try url.bookmarkData(
+            options: .minimalBookmark,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+    }
+}
+
 /// MRU-ordered store of security-scoped folder bookmarks, persisted via injected `UserDefaults`.
 ///
 /// AIP §1 (bookmark key strategy) + §2 (`@Observable`). The store does NOT cache resolved URLs
@@ -36,10 +86,31 @@ enum BookmarkResolutionError: Error, Equatable {
 final class BookmarkStore {
     private let defaults: UserDefaults
     private let key: String
+    private let resolver: BookmarkResolving
+    private let logger: Logger
 
-    init(defaults: UserDefaults = .standard, storageKey: String = "bjj.annotate.bookmarks.v1") {
+    /// Non-blocking surface for the most recent persistence fault. UI banners on non-nil and
+    /// calls `clearLastError()` once the user has acknowledged (Findings #4 / #5).
+    var lastError: BookmarkStoreError?
+
+    init(
+        defaults: UserDefaults = .standard,
+        storageKey: String = "bjj.annotate.bookmarks.v1",
+        resolver: BookmarkResolving = SystemBookmarkResolver(),
+        logger: Logger = Logger(subsystem: "com.stanxxy.bjjannotate", category: "persistence")
+    ) {
         self.defaults = defaults
         self.key = storageKey
+        self.resolver = resolver
+        self.logger = logger
+    }
+
+    // MARK: - Error surface
+
+    /// Clears the most recent persistence fault. Call after the UI has acknowledged the
+    /// banner / alert.
+    func clearLastError() {
+        lastError = nil
     }
 
     // MARK: - Reads
@@ -104,15 +175,10 @@ final class BookmarkStore {
         guard let entry = loadAll().first(where: { $0.id == id }) else {
             throw BookmarkResolutionError.unknownId
         }
-        var stale = false
-        let url: URL
+
+        let outcome: (url: URL, isStale: Bool)
         do {
-            url = try URL(
-                resolvingBookmarkData: entry.bookmark,
-                options: [.withoutUI],
-                relativeTo: nil,
-                bookmarkDataIsStale: &stale
-            )
+            outcome = try resolver.resolve(data: entry.bookmark)
         } catch let nsError as NSError {
             // Foundation may surface "file does not exist" through several error domains:
             //   - NSCocoaErrorDomain / NSFileReadNoSuchFileError (Cocoa file APIs)
@@ -126,6 +192,8 @@ final class BookmarkStore {
             throw BookmarkResolutionError.foundation(nsError.localizedDescription)
         }
 
+        let url = outcome.url
+
         // Existence check — needed for AC #6 (folder moved to Trash; URL resolves but path is gone).
         if !FileManager.default.fileExists(atPath: url.path) {
             throw BookmarkResolutionError.notFound
@@ -137,21 +205,36 @@ final class BookmarkStore {
             throw BookmarkResolutionError.notADirectory
         }
 
-        if stale {
-            // PM AC #9: refresh stale bookmarks transparently.
-            if let started = startAccessing(url: url) {
-                defer { stopAccessing(url: url, token: started) }
-                if let refreshed = try? url.bookmarkData(
-                    options: .minimalBookmark,
-                    includingResourceValuesForKeys: nil,
-                    relativeTo: nil
-                ) {
-                    replace(id: id, bookmark: refreshed, openedAt: entry.lastOpenedAt)
-                }
-            }
+        if outcome.isStale {
+            refreshStaleBookmark(id: id, url: url, previousLastOpenedAt: entry.lastOpenedAt)
         }
 
         return url
+    }
+
+    /// PM AC #9 / Finding #7: re-mint and persist the bookmark after iOS reports staleness.
+    /// Failure here is non-fatal — the resolved URL is still usable for THIS session; we just
+    /// log and surface `lastError` so the next launch can retry.
+    private func refreshStaleBookmark(id: String, url: URL, previousLastOpenedAt: Date) {
+        // The test seam (`FakeBookmarkResolver`) returns canned URLs that may not be backed
+        // by a real security-scoped resource; we still attempt to start access for production
+        // bookmarks. If `startAccessing` returns nil we proceed without it — `mintBookmark`
+        // may still succeed for local file URLs in tests, and will throw for real bookmarks
+        // which we then surface.
+        let token = startAccessing(url: url)
+        defer {
+            if let token = token { stopAccessing(url: url, token: token) }
+        }
+
+        do {
+            let refreshed = try resolver.mintBookmark(for: url)
+            replace(id: id, bookmark: refreshed, openedAt: previousLastOpenedAt)
+        } catch {
+            let description = (error as NSError).localizedDescription
+            logger.error("Stale-bookmark refresh failed for id \(id, privacy: .public): \(description, privacy: .public)")
+            assertionFailure("Stale-bookmark refresh failed: \(description)")
+            lastError = .staleRefreshFailed(description: description)
+        }
     }
 
     /// Convenience: start security-scoped access. Returns the URL if access started, nil on
@@ -194,17 +277,41 @@ final class BookmarkStore {
     private func loadAll() -> [StoredBookmark] {
         guard let data = defaults.data(forKey: key) else { return [] }
         do {
-            return try JSONDecoder().decode([StoredBookmark].self, from: data)
+            let items = try JSONDecoder().decode([StoredBookmark].self, from: data)
+            return items
         } catch {
-            // Corrupt blob: surface as empty rather than crash. Logged here would be nicer,
-            // but Phase 0 has no logger; the empty state is recoverable via "Open Folder".
+            // Finding #5: surface as non-blocking error instead of silently returning [].
+            //
+            // DESIGN CHOICE (commit message documents this): we DO return [] so the UI can
+            // render (the alternative — refusing to proceed — would brick the app and require
+            // a delete-and-reinstall). The corrupt blob is PRESERVED in UserDefaults under
+            // `key` (we never overwrite on read), so a future debug build can inspect it. The
+            // user is informed via `lastError` so they know to expect a missing project list
+            // and can re-pick via "Open Folder".
+            let description = (error as NSError).localizedDescription
+            logger.error("BookmarkStore.loadAll decode failure: \(description, privacy: .public)")
+            // NOTE: NO `assertionFailure` here — corruption is a runtime condition we expect
+            // to observe (and a test in BookmarkStoreErrorSurfacingTests deliberately seeds
+            // it). The user-visible surface is `lastError`; debug introspection comes from
+            // the os.Logger trace.
+            lastError = .decodeFailed(description: description)
             return []
         }
     }
 
     private func persist(_ items: [StoredBookmark]) {
-        if let data = try? JSONEncoder().encode(items) {
+        // Finding #4: previously `try? JSONEncoder().encode(items)`. With the current
+        // schema (String / Data / Date) encode is infallible by construction, so we use
+        // `try!`-equivalent via explicit do/catch that traps in debug and surfaces in
+        // release rather than silently dropping the write.
+        do {
+            let data = try JSONEncoder().encode(items)
             defaults.set(data, forKey: key)
+        } catch {
+            let description = (error as NSError).localizedDescription
+            logger.error("BookmarkStore.persist encode failure: \(description, privacy: .public)")
+            assertionFailure("BookmarkStore encode failure (should be unreachable with current schema): \(description)")
+            lastError = .encodeFailed(description: description)
         }
     }
 }
