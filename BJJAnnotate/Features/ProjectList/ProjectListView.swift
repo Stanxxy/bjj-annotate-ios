@@ -31,6 +31,12 @@ struct ProjectListView: View {
         .navigationTitle("Projects")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            // Designer Resolution #3 / PM Addendum: toolbar `+` ONLY on the populated state.
+            // The Designer Mockup Pack §State 1b originally proposed BOTH the toolbar `+`
+            // AND a persistent bottom CTA on populated state, but PM resolved this to
+            // toolbar-only (Files-app pattern). Empty state retains the bottom CTA.
+            // DO NOT re-add a bottom Open Folder button to `populatedState` citing the
+            // Designer pack — PM is binding per chain order. See evaluator finding #3.
             if !viewModel.rows.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -91,21 +97,17 @@ struct ProjectListView: View {
     }
 
     private var populatedState: some View {
-        VStack(spacing: 0) {
-            List {
-                ForEach(viewModel.rows) { row in
-                    rowView(for: row)
-                }
+        // Finding #3 + Designer Resolution #3: NO bottom `openFolderButton` here. The toolbar
+        // `+` is the ONLY new-project entry point on populated state.
+        List {
+            ForEach(viewModel.rows) { row in
+                rowView(for: row)
             }
-            .listStyle(.insetGrouped)
-            .accessibilityIdentifier("ProjectList.List")
-            .accessibilityAction(named: "Refresh") {
-                viewModel.refresh()
-            }
-
-            openFolderButton
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+        }
+        .listStyle(.insetGrouped)
+        .accessibilityIdentifier("ProjectList.List")
+        .accessibilityAction(named: "Refresh") {
+            viewModel.refresh()
         }
         .background(Color(.systemGroupedBackground))
     }
