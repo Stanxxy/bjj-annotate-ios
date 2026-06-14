@@ -21,8 +21,17 @@ open BJJAnnotate.xcodeproj
 ```
 
 For the first device run, select the `BJJAnnotate` target → Signing & Capabilities →
-choose your personal team. Code-signing is disabled in the simulator builds
-(`CODE_SIGNING_ALLOWED=NO`); the device build needs your team selected.
+choose your personal team. The project is configured with `CODE_SIGN_STYLE = Automatic`
+and no hardcoded `DEVELOPMENT_TEAM`, so Xcode's "Automatically manage signing" UI
+drives team selection without conflict.
+
+On-device builds via the Xcode IDE require codesigning enabled (the default).
+The `CODE_SIGNING_ALLOWED=NO` flag belongs **only** on the simulator-only
+`xcodebuild test` command below; it is a CLI-level concern for sandboxed CI
+runs and is intentionally **not** baked into `project.yml` / `project.pbxproj`.
+Baking it into the project caused iOS to reject the device binary with
+`LaunchExecutableValidationErrorDomain` code 1 ("The executable is not
+codesigned"), even though the simulator (sandboxed) launched it fine.
 
 ## 2. Simulator build + tests
 
@@ -34,6 +43,10 @@ xcodebuild test \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO
 ```
+
+The `CODE_SIGNING_ALLOWED=NO` override on the CLI keeps the simulator test run
+working in sandboxed environments without provisioning profiles. Do **not**
+add this flag to device builds.
 
 Expected: `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
 `Executed 4 tests, with 0 failures` (BJJAnnotateUITests).
