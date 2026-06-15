@@ -18,6 +18,7 @@
 		1615660368B5BEF25D239C1D /* BoxIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */; };
 		21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */; };
 		222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */; };
+		22932A594E31865959409B31 /* AthletePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B07D2E585E12641A2741B6 /* AthletePicker.swift */; };
 		25B0E77457988552A798F4D1 /* DragStagingContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 484C9E520961128D7E8A35B1 /* DragStagingContractTests.swift */; };
 		30A0C4B344E8A6BB356F0AEA /* ProjectGridViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */; };
 		311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */; };
@@ -37,6 +38,7 @@
 		629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */; };
 		65E189ADF1C48F5164A2E197 /* BoxDragStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95943704F5939D130E70819 /* BoxDragStage.swift */; };
 		6C7F2CEFF9CA5235F8C268AD /* ImageStateTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */; };
+		6F49E1A00F8FB80900231C8E /* AthletePickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCC5D13C32CEEA3D7280E89 /* AthletePickerTests.swift */; };
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
 		7A9C2320038613BF095A369A /* AnnotatorCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */; };
 		7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */; };
@@ -160,12 +162,14 @@
 		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
 		BCC0A2F849C62996EA3982B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fixtures; path = BJJAnnotateTests/Fixtures; sourceTree = SOURCE_ROOT; };
 		C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyGrepTests.swift; sourceTree = "<group>"; };
+		C9B07D2E585E12641A2741B6 /* AthletePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthletePicker.swift; sourceTree = "<group>"; };
 		CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteRegistryTests.swift; sourceTree = "<group>"; };
 		D01D11352CC1B049CA381065 /* ProjectListPickerErrorRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListPickerErrorRoutingTests.swift; sourceTree = "<group>"; };
 		D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValueTests.swift; sourceTree = "<group>"; };
 		D1D910226AB7B74787989A8E /* ClassChipRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassChipRow.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
+		DDCC5D13C32CEEA3D7280E89 /* AthletePickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthletePickerTests.swift; sourceTree = "<group>"; };
 		DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderUbiquityTests.swift; sourceTree = "<group>"; };
 		E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCell.swift; sourceTree = "<group>"; };
 		EA8BECD32542B7CE28925107 /* ProjectFolderUbiquityLockHardeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderUbiquityLockHardeningTests.swift; sourceTree = "<group>"; };
@@ -232,6 +236,7 @@
 				AE6513949672E3B413C7EFF3 /* AnnotatorCanvasGeometryTests.swift */,
 				A29DA11622EA110EDB8E0F22 /* AnnotatorNavigationContractTests.swift */,
 				0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */,
+				DDCC5D13C32CEEA3D7280E89 /* AthletePickerTests.swift */,
 				CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */,
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
@@ -329,6 +334,7 @@
 			children = (
 				F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */,
 				12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */,
+				C9B07D2E585E12641A2741B6 /* AthletePicker.swift */,
 				B95943704F5939D130E70819 /* BoxDragStage.swift */,
 				00A82B09BDA08D3234AD314B /* CanvasTransform.swift */,
 				D1D910226AB7B74787989A8E /* ClassChipRow.swift */,
@@ -487,6 +493,7 @@
 				7A9C2320038613BF095A369A /* AnnotatorCanvasView.swift in Sources */,
 				9A4F0E2AA35AF5D3F2E6AABE /* AnnotatorView.swift in Sources */,
 				C60E8B9A3623754C2AE22E71 /* AthletePalette.swift in Sources */,
+				22932A594E31865959409B31 /* AthletePicker.swift in Sources */,
 				38E36C09ECDDA8ED73E9CF5B /* AthleteRegistry.swift in Sources */,
 				3AF978D984CA3173B1DE92BE /* BBox.swift in Sources */,
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
@@ -524,6 +531,7 @@
 				15E0852D6E153292900B58A8 /* AnnotatorCanvasGeometryTests.swift in Sources */,
 				02AFBE5E573B56C7ACBB3E31 /* AnnotatorNavigationContractTests.swift in Sources */,
 				A3E1259A0CB42AE3378EC79F /* AthletePaletteTests.swift in Sources */,
+				6F49E1A00F8FB80900231C8E /* AthletePickerTests.swift in Sources */,
 				4A812A238F8AE2208EDB8BB9 /* AthleteRegistryTests.swift in Sources */,
 				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
 				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
