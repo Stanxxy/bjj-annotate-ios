@@ -53,6 +53,7 @@
 		A2B4FB134D677D662DC1E8F5 /* ProductionSources_Persistence in Resources */ = {isa = PBXBuildFile; fileRef = 35B48ADC20F6579A0C830129 /* ProductionSources_Persistence */; };
 		A3E1259A0CB42AE3378EC79F /* AthletePaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */; };
 		A514875F93448DF96D8B567A /* AnnotationStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */; };
+		A60E40F59219126D65425472 /* ClassChipRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D783304E772194E5886497 /* ClassChipRowTests.swift */; };
 		A8A40445F027970D872F10A1 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767327C9556EE79353400DC2 /* ThumbnailCache.swift */; };
 		AABEA31A104F4F0D76FACCD0 /* ThumbnailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */; };
 		AF2A4096C9530B46FB5DEC8C /* ProjectListPickerErrorRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01D11352CC1B049CA381065 /* ProjectListPickerErrorRoutingTests.swift */; };
@@ -65,6 +66,7 @@
 		BD182DBBEF5B258283820EA0 /* FakeUbiquityResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC2B4142CEFD8B28C84A494 /* FakeUbiquityResolver.swift */; };
 		C60E8B9A3623754C2AE22E71 /* AthletePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF12FB9EDD2399642E2D515B /* AthletePalette.swift */; };
 		C972190F9AB039BEDFB799CD /* ProductionSources_Domain in Resources */ = {isa = PBXBuildFile; fileRef = 62427B70A37CD0E88C9902F2 /* ProductionSources_Domain */; };
+		C9FD99546DA0566423E7E03C /* ClassChipRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D910226AB7B74787989A8E /* ClassChipRow.swift */; };
 		D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */; };
 		D28120C423F086E3FE748556 /* ProjectListErrorBannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B3C877DC5304757F151872 /* ProjectListErrorBannerTests.swift */; };
 		D49B836B6CE201E741FF0820 /* BoxHandleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */; };
@@ -100,6 +102,7 @@
 /* Begin PBXFileReference section */
 		00A82B09BDA08D3234AD314B /* CanvasTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTransform.swift; sourceTree = "<group>"; };
 		0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthletePaletteTests.swift; sourceTree = "<group>"; };
+		04D783304E772194E5886497 /* ClassChipRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassChipRowTests.swift; sourceTree = "<group>"; };
 		0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopy.swift; sourceTree = "<group>"; };
 		0DB4EA75497C48A21AD33473 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
 		12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorView.swift; sourceTree = "<group>"; };
@@ -160,6 +163,7 @@
 		CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteRegistryTests.swift; sourceTree = "<group>"; };
 		D01D11352CC1B049CA381065 /* ProjectListPickerErrorRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListPickerErrorRoutingTests.swift; sourceTree = "<group>"; };
 		D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValueTests.swift; sourceTree = "<group>"; };
+		D1D910226AB7B74787989A8E /* ClassChipRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassChipRow.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
 		DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderUbiquityTests.swift; sourceTree = "<group>"; };
@@ -234,6 +238,7 @@
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
 				2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */,
 				27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */,
+				04D783304E772194E5886497 /* ClassChipRowTests.swift */,
 				F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */,
 				59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */,
 				4C1E2E9731F0CF5DEFBD9C55 /* CocoIsDiskTruthTests.swift */,
@@ -326,6 +331,7 @@
 				12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */,
 				B95943704F5939D130E70819 /* BoxDragStage.swift */,
 				00A82B09BDA08D3234AD314B /* CanvasTransform.swift */,
+				D1D910226AB7B74787989A8E /* ClassChipRow.swift */,
 			);
 			path = Annotator;
 			sourceTree = "<group>";
@@ -489,6 +495,7 @@
 				9BD4DF08733B4D5B6DAEBDDA /* BoxHandle.swift in Sources */,
 				46B5B26D9FBA1A470CD2F6B4 /* BoxIntake.swift in Sources */,
 				42991FCC1CF0DD7AD252A4FB /* CanvasTransform.swift in Sources */,
+				C9FD99546DA0566423E7E03C /* ClassChipRow.swift in Sources */,
 				8D62820E405C7FFFA719D13C /* CocoFileCoordinator.swift in Sources */,
 				F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */,
 				D5971788E9997E6428345C05 /* ConflictSidecar.swift in Sources */,
@@ -523,6 +530,7 @@
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
 				D49B836B6CE201E741FF0820 /* BoxHandleTests.swift in Sources */,
 				1615660368B5BEF25D239C1D /* BoxIntakeTests.swift in Sources */,
+				A60E40F59219126D65425472 /* ClassChipRowTests.swift in Sources */,
 				4DE495776A6941B859BDDAC6 /* CocoFileCoordinatorConflictTests.swift in Sources */,
 				B8D75EA6D2811A4BD169301E /* CocoFileCoordinatorTests.swift in Sources */,
 				B8802DDB253679FCCA3A2EAA /* CocoIsDiskTruthTests.swift in Sources */,
