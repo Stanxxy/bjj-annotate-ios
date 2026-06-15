@@ -15,6 +15,7 @@
 		13B339F6FB82F246E63AD5C9 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = BCC0A2F849C62996EA3982B6 /* Fixtures */; };
 		1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */; };
 		15E0852D6E153292900B58A8 /* AnnotatorCanvasGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE6513949672E3B413C7EFF3 /* AnnotatorCanvasGeometryTests.swift */; };
+		1615660368B5BEF25D239C1D /* BoxIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */; };
 		21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */; };
 		222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */; };
 		25B0E77457988552A798F4D1 /* DragStagingContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 484C9E520961128D7E8A35B1 /* DragStagingContractTests.swift */; };
@@ -27,12 +28,14 @@
 		3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */; };
 		42991FCC1CF0DD7AD252A4FB /* CanvasTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A82B09BDA08D3234AD314B /* CanvasTransform.swift */; };
 		4405AA9CB7AA8C62B0E7E77B /* SilentScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B851A77102048ED318E9D00 /* SilentScheduler.swift */; };
+		46B5B26D9FBA1A470CD2F6B4 /* BoxIntake.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECC774B5F6569CCB34E9DB0 /* BoxIntake.swift */; };
 		47D35B32A4FE72DA93F46249 /* AnnotationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A8F8F0D75867642D7A5119 /* AnnotationStore.swift */; };
 		4A812A238F8AE2208EDB8BB9 /* AthleteRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */; };
 		4DE495776A6941B859BDDAC6 /* CocoFileCoordinatorConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */; };
 		51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB4EA75497C48A21AD33473 /* JSONValue.swift */; };
 		5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */; };
 		629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */; };
+		65E189ADF1C48F5164A2E197 /* BoxDragStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95943704F5939D130E70819 /* BoxDragStage.swift */; };
 		6C7F2CEFF9CA5235F8C268AD /* ImageStateTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */; };
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
 		7A9C2320038613BF095A369A /* AnnotatorCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */; };
@@ -66,6 +69,7 @@
 		D5971788E9997E6428345C05 /* ConflictSidecar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F07932562828A33C550149AE /* ConflictSidecar.swift */; };
 		DFFA205CB22C95CA5E27C99D /* ProjectFolderUbiquityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */; };
 		E2C0D926DB4B78681AC9F9CD /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25AA4416B8DC81B4E55B5A7 /* Layout.swift */; };
+		E6E90FF6D0340EC6A0B2CE50 /* ProjectFolderUbiquityLockHardeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8BECD32542B7CE28925107 /* ProjectFolderUbiquityLockHardeningTests.swift */; };
 		EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */; };
 		EFAC6215CDDC8EC470880EAA /* ImageStateTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */; };
 		F8AE7106F5B8AD7C0AC5EFD6 /* UbiquityResolverFakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D23F41A9844AB4F9AAB2633 /* UbiquityResolverFakeTests.swift */; };
@@ -102,6 +106,7 @@
 		1D23F41A9844AB4F9AAB2633 /* UbiquityResolverFakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UbiquityResolverFakeTests.swift; sourceTree = "<group>"; };
 		1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModelTests.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxIntakeTests.swift; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
 		2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStateTrackerTests.swift; sourceTree = "<group>"; };
 		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
@@ -114,6 +119,7 @@
 		4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModelTests.swift; sourceTree = "<group>"; };
 		484C9E520961128D7E8A35B1 /* DragStagingContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragStagingContractTests.swift; sourceTree = "<group>"; };
 		4C1E2E9731F0CF5DEFBD9C55 /* CocoIsDiskTruthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoIsDiskTruthTests.swift; sourceTree = "<group>"; };
+		4ECC774B5F6569CCB34E9DB0 /* BoxIntake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxIntake.swift; sourceTree = "<group>"; };
 		50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStateTracker.swift; sourceTree = "<group>"; };
 		52A5AF26D346679D28F6BDA7 /* BJJAnnotateUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BJJAnnotateUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreTests.swift; sourceTree = "<group>"; };
@@ -143,6 +149,7 @@
 		AB6A8C0CAAF14067283DA0A9 /* UIDeviceUserInterfaceIdiomBanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIDeviceUserInterfaceIdiomBanTests.swift; sourceTree = "<group>"; };
 		AE6513949672E3B413C7EFF3 /* AnnotatorCanvasGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorCanvasGeometryTests.swift; sourceTree = "<group>"; };
 		B862EB7AD67744FB5E772D66 /* BBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BBox.swift; sourceTree = "<group>"; };
+		B95943704F5939D130E70819 /* BoxDragStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxDragStage.swift; sourceTree = "<group>"; };
 		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
 		BCC0A2F849C62996EA3982B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fixtures; path = BJJAnnotateTests/Fixtures; sourceTree = SOURCE_ROOT; };
 		C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyGrepTests.swift; sourceTree = "<group>"; };
@@ -153,6 +160,7 @@
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
 		DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderUbiquityTests.swift; sourceTree = "<group>"; };
 		E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCell.swift; sourceTree = "<group>"; };
+		EA8BECD32542B7CE28925107 /* ProjectFolderUbiquityLockHardeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderUbiquityLockHardeningTests.swift; sourceTree = "<group>"; };
 		EF12FB9EDD2399642E2D515B /* AthletePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthletePalette.swift; sourceTree = "<group>"; };
 		F07932562828A33C550149AE /* ConflictSidecar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictSidecar.swift; sourceTree = "<group>"; };
 		F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorCanvasView.swift; sourceTree = "<group>"; };
@@ -220,6 +228,7 @@
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
+				27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */,
 				F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */,
 				59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */,
 				4C1E2E9731F0CF5DEFBD9C55 /* CocoIsDiskTruthTests.swift */,
@@ -233,6 +242,7 @@
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
 				31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */,
 				9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */,
+				EA8BECD32542B7CE28925107 /* ProjectFolderUbiquityLockHardeningTests.swift */,
 				DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */,
 				90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */,
 				A3B3C877DC5304757F151872 /* ProjectListErrorBannerTests.swift */,
@@ -295,6 +305,7 @@
 				EF12FB9EDD2399642E2D515B /* AthletePalette.swift */,
 				3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */,
 				B862EB7AD67744FB5E772D66 /* BBox.swift */,
+				4ECC774B5F6569CCB34E9DB0 /* BoxIntake.swift */,
 				8A3200728C61554EB8226051 /* CocoModel.swift */,
 				50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */,
 				0DB4EA75497C48A21AD33473 /* JSONValue.swift */,
@@ -307,6 +318,7 @@
 			children = (
 				F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */,
 				12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */,
+				B95943704F5939D130E70819 /* BoxDragStage.swift */,
 				00A82B09BDA08D3234AD314B /* CanvasTransform.swift */,
 			);
 			path = Annotator;
@@ -467,6 +479,8 @@
 				3AF978D984CA3173B1DE92BE /* BBox.swift in Sources */,
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
 				EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */,
+				65E189ADF1C48F5164A2E197 /* BoxDragStage.swift in Sources */,
+				46B5B26D9FBA1A470CD2F6B4 /* BoxIntake.swift in Sources */,
 				42991FCC1CF0DD7AD252A4FB /* CanvasTransform.swift in Sources */,
 				8D62820E405C7FFFA719D13C /* CocoFileCoordinator.swift in Sources */,
 				F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */,
@@ -500,6 +514,7 @@
 				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
 				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
+				1615660368B5BEF25D239C1D /* BoxIntakeTests.swift in Sources */,
 				4DE495776A6941B859BDDAC6 /* CocoFileCoordinatorConflictTests.swift in Sources */,
 				B8D75EA6D2811A4BD169301E /* CocoFileCoordinatorTests.swift in Sources */,
 				B8802DDB253679FCCA3A2EAA /* CocoIsDiskTruthTests.swift in Sources */,
@@ -513,6 +528,7 @@
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
 				222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */,
 				8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */,
+				E6E90FF6D0340EC6A0B2CE50 /* ProjectFolderUbiquityLockHardeningTests.swift in Sources */,
 				DFFA205CB22C95CA5E27C99D /* ProjectFolderUbiquityTests.swift in Sources */,
 				D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */,
 				D28120C423F086E3FE748556 /* ProjectListErrorBannerTests.swift in Sources */,

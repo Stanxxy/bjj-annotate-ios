@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Scans a project folder for image files at the root level only.
 ///
@@ -96,20 +97,44 @@ struct ProjectFolder {
                 continue
             }
             // Placeholder: try to materialize within the per-file budget.
+            //
+            // L-1 hardening (T15 evaluator carry-forward): the captured `didSucceed`
+            // is read across the semaphore barrier from a different thread than the
+            // detached task writing it. Darwin's `DispatchSemaphore` happens to act
+            // as a release/acquire pair in practice, but the contract is undocumented.
+            // We make the barrier contractual by gating the captured Bool's
+            // write+read behind `os_unfair_lock`. The semaphore still drives the
+            // wakeup; the lock guarantees `didSucceed`'s visibility.
+            //
+            // MARK: Phase 2 — placeholdersSkipped diagnostic (L-2 carry-forward).
+            // Aggregate skipped count here when wiring the Phase 2 telemetry.
+            let resultLock = UnsafeMutablePointer<os_unfair_lock_s>.allocate(capacity: 1)
+            resultLock.initialize(to: os_unfair_lock_s())
+            defer {
+                resultLock.deinitialize(count: 1)
+                resultLock.deallocate()
+            }
             let semaphore = DispatchSemaphore(value: 0)
             var didSucceed = false
             Task.detached {
+                let outcome: Bool
                 do {
                     try await ubiquity.startDownloadingAndWait(at: candidate, timeout: timeout)
-                    didSucceed = true
+                    outcome = true
                 } catch {
-                    didSucceed = false
+                    outcome = false
                 }
+                os_unfair_lock_lock(resultLock)
+                didSucceed = outcome
+                os_unfair_lock_unlock(resultLock)
                 semaphore.signal()
             }
             // Wait at most timeout + small slack (handles the sleep-then-throw path).
             let waitResult = semaphore.wait(timeout: .now() + .milliseconds(Int(timeout * 1000) + 200))
-            if waitResult == .success && didSucceed {
+            os_unfair_lock_lock(resultLock)
+            let succeeded = didSucceed
+            os_unfair_lock_unlock(resultLock)
+            if waitResult == .success && succeeded {
                 resolved.append(candidate)
             }
             // Else: skip silently per T11 contract.
