@@ -48,8 +48,16 @@ The `CODE_SIGNING_ALLOWED=NO` override on the CLI keeps the simulator test run
 working in sandboxed environments without provisioning profiles. Do **not**
 add this flag to device builds.
 
-Expected: `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
+Expected (Phase 0): `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
 `Executed 4 tests, with 0 failures` (BJJAnnotateUITests).
+
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T10):
+`Executed 110 tests, with 0 failures` (BJJAnnotateTests). No XCUITest
+additions on this branch yet (T13–T24 deliver UI surfaces + their
+XCUITest coverage; see Phase 1 task graph).
+
+Simulator destination on this machine uses `iPhone 16e,OS=26.2`; iPhone
+16 with OS 26.2 is not provisioned in the local simulator runtime.
 
 ## 3. Phase 0 PM verification — device-only criteria
 
@@ -123,3 +131,32 @@ restored the discipline:
 
 Going forward (Phase 1+), every test commit lands BEFORE the implementation
 commit that satisfies it. The evaluator validates by diffing commit order.
+
+## 7. Phase 1 progress — `feature/phase-1-domain-boxes` (in flight)
+
+Domain + persistence layers landed (T1–T10). UI surfaces (T13–T24) are
+pending; the engineer skill checkpointed mid-task-graph to hand back to
+the evaluator after the architecturally-load-bearing pieces.
+
+| Task | Status | Tests |
+|------|--------|-------|
+| T1 LockedCopy (11 strings) | Done | Phase1LockedCopyTests + LockedCopyGrepTests |
+| T2 JSONValue | Done | JSONValueTests |
+| T3 CocoModel + fixture | Done | CocoModelTests |
+| T4 AthletePalette + AthleteRegistry | Done | AthletePaletteTests + AthletePaletteGrepTests + AthleteRegistryTests |
+| T5 AnnotationStore | Done | AnnotationStoreTests + DomainSingleSourceGrepTests |
+| T6 ImageStateTracker | Done | ImageStateTrackerTests |
+| T7 UbiquityResolver + Fake | Done | UbiquityResolverFakeTests |
+| T8 + T9 CocoFileCoordinator | Done | CocoFileCoordinatorTests + UbiquityTests + ProductionSourceGrepTests + DebounceImplementationGrepTests |
+| T10 ConflictSidecar | Done | CocoFileCoordinatorConflictTests |
+| T11 ProjectFolder ubiquity back-apply | Pending | — |
+| T12 lastError banner wiring | Pending | — |
+| T13–T24 UI + golden-path | Pending | — |
+
+All Phase 0 tests still pass (35 of the 110 are Phase 0). Grep gates in
+place: 11 PM-locked strings centralised in `LockedCopy.swift`, 8 palette
+hexes centralised in `AthletePalette.swift`, zero `try?` in production
+`CocoFileCoordinator.swift` / `AnnotationStore.swift`, zero
+`DispatchQueue.asyncAfter` in the debounce path. After every
+`xcodegen generate` the `CODE_SIGNING_ALLOWED` + `DEVELOPMENT_TEAM`
+greps return 0 (Phase 0 trap #1 not re-triggered).
