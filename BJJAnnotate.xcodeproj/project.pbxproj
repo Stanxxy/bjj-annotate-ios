@@ -48,6 +48,7 @@
 		8DBD988D35D4169369EA30F9 /* UbiquityResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96ED64DBA2E3119ECBB86C99 /* UbiquityResolver.swift */; };
 		96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */; };
 		9A4F0E2AA35AF5D3F2E6AABE /* AnnotatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */; };
+		9BD4DF08733B4D5B6DAEBDDA /* BoxHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37592E5E1E503C1DB49E142B /* BoxHandle.swift */; };
 		9C968F935137A673628FF18F /* TempDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A33EA1993E0357A341B8A /* TempDirectory.swift */; };
 		A2B4FB134D677D662DC1E8F5 /* ProductionSources_Persistence in Resources */ = {isa = PBXBuildFile; fileRef = 35B48ADC20F6579A0C830129 /* ProductionSources_Persistence */; };
 		A3E1259A0CB42AE3378EC79F /* AthletePaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */; };
@@ -66,6 +67,7 @@
 		C972190F9AB039BEDFB799CD /* ProductionSources_Domain in Resources */ = {isa = PBXBuildFile; fileRef = 62427B70A37CD0E88C9902F2 /* ProductionSources_Domain */; };
 		D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */; };
 		D28120C423F086E3FE748556 /* ProjectListErrorBannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B3C877DC5304757F151872 /* ProjectListErrorBannerTests.swift */; };
+		D49B836B6CE201E741FF0820 /* BoxHandleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */; };
 		D5971788E9997E6428345C05 /* ConflictSidecar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F07932562828A33C550149AE /* ConflictSidecar.swift */; };
 		DFFA205CB22C95CA5E27C99D /* ProjectFolderUbiquityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DECB9A89EDB39B6C81A8545F /* ProjectFolderUbiquityTests.swift */; };
 		E2C0D926DB4B78681AC9F9CD /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25AA4416B8DC81B4E55B5A7 /* Layout.swift */; };
@@ -109,9 +111,11 @@
 		27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxIntakeTests.swift; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
 		2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStateTrackerTests.swift; sourceTree = "<group>"; };
+		2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxHandleTests.swift; sourceTree = "<group>"; };
 		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
 		35B48ADC20F6579A0C830129 /* ProductionSources_Persistence */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ProductionSources_Persistence; path = BJJAnnotate/Persistence; sourceTree = SOURCE_ROOT; };
 		3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStoreTests.swift; sourceTree = "<group>"; };
+		37592E5E1E503C1DB49E142B /* BoxHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxHandle.swift; sourceTree = "<group>"; };
 		3BC2B4142CEFD8B28C84A494 /* FakeUbiquityResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeUbiquityResolver.swift; sourceTree = "<group>"; };
 		3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteRegistry.swift; sourceTree = "<group>"; };
 		3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
@@ -228,6 +232,7 @@
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
+				2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */,
 				27FE3FAF6BC0D89A8C2C9D8B /* BoxIntakeTests.swift */,
 				F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */,
 				59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */,
@@ -305,6 +310,7 @@
 				EF12FB9EDD2399642E2D515B /* AthletePalette.swift */,
 				3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */,
 				B862EB7AD67744FB5E772D66 /* BBox.swift */,
+				37592E5E1E503C1DB49E142B /* BoxHandle.swift */,
 				4ECC774B5F6569CCB34E9DB0 /* BoxIntake.swift */,
 				8A3200728C61554EB8226051 /* CocoModel.swift */,
 				50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */,
@@ -480,6 +486,7 @@
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
 				EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */,
 				65E189ADF1C48F5164A2E197 /* BoxDragStage.swift in Sources */,
+				9BD4DF08733B4D5B6DAEBDDA /* BoxHandle.swift in Sources */,
 				46B5B26D9FBA1A470CD2F6B4 /* BoxIntake.swift in Sources */,
 				42991FCC1CF0DD7AD252A4FB /* CanvasTransform.swift in Sources */,
 				8D62820E405C7FFFA719D13C /* CocoFileCoordinator.swift in Sources */,
@@ -514,6 +521,7 @@
 				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
 				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
+				D49B836B6CE201E741FF0820 /* BoxHandleTests.swift in Sources */,
 				1615660368B5BEF25D239C1D /* BoxIntakeTests.swift in Sources */,
 				4DE495776A6941B859BDDAC6 /* CocoFileCoordinatorConflictTests.swift in Sources */,
 				B8D75EA6D2811A4BD169301E /* CocoFileCoordinatorTests.swift in Sources */,
