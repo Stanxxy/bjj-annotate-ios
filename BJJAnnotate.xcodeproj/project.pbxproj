@@ -11,6 +11,7 @@
 		08FD47B84A5BD588E0EE4ADB /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */; };
 		0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5869831EB1FFDAC97621E4DD /* BJJAnnotateApp.swift */; };
 		0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */; };
+		13B339F6FB82F246E63AD5C9 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = BCC0A2F849C62996EA3982B6 /* Fixtures */; };
 		1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */; };
 		21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */; };
 		222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */; };
@@ -26,7 +27,6 @@
 		81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */; };
 		86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */; };
 		8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */; };
-		8B6C5B5CEF72B5276000AAEB /* example.coco.json in Resources */ = {isa = PBXBuildFile; fileRef = 15438C8092E394D617A4FD9E /* example.coco.json */; };
 		8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */; };
 		96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */; };
 		9C968F935137A673628FF18F /* TempDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A33EA1993E0357A341B8A /* TempDirectory.swift */; };
@@ -38,6 +38,7 @@
 		BC4EDE80FC6008DB7DBFC539 /* ProjectGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6195F0387F9674703C28B151 /* ProjectGridView.swift */; };
 		D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */; };
 		EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */; };
+		F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A3200728C61554EB8226051 /* CocoModel.swift */; };
 		FE8620E08954C0AC4BF6BA55 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3376543D524E01493327E56 /* RootView.swift */; };
 		FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */; };
 /* End PBXBuildFile section */
@@ -62,7 +63,6 @@
 /* Begin PBXFileReference section */
 		0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopy.swift; sourceTree = "<group>"; };
 		0DB4EA75497C48A21AD33473 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
-		15438C8092E394D617A4FD9E /* example.coco.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = example.coco.json; sourceTree = "<group>"; };
 		17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
 		1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModelTests.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -82,12 +82,14 @@
 		7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPickerTests.swift; sourceTree = "<group>"; };
 		7E1A33EA1993E0357A341B8A /* TempDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempDirectory.swift; sourceTree = "<group>"; };
 		8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyTests.swift; sourceTree = "<group>"; };
+		8A3200728C61554EB8226051 /* CocoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModel.swift; sourceTree = "<group>"; };
 		90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModelTests.swift; sourceTree = "<group>"; };
 		9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModel.swift; sourceTree = "<group>"; };
 		9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyGridUITests.swift; sourceTree = "<group>"; };
 		9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderTests.swift; sourceTree = "<group>"; };
 		A2E04776E5022074A20F06C2 /* BJJAnnotate.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BJJAnnotate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
+		BCC0A2F849C62996EA3982B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fixtures; path = BJJAnnotateTests/Fixtures; sourceTree = SOURCE_ROOT; };
 		C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyGrepTests.swift; sourceTree = "<group>"; };
 		D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValueTests.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
@@ -128,14 +130,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		52F86E2BE85D63E3B618A1A2 /* Fixtures */ = {
-			isa = PBXGroup;
-			children = (
-				15438C8092E394D617A4FD9E /* example.coco.json */,
-			);
-			path = Fixtures;
-			sourceTree = "<group>";
-		};
 		5A3BBD1B9E5F06A85FBE200A /* BJJAnnotate */ = {
 			isa = PBXGroup;
 			children = (
@@ -151,12 +145,12 @@
 		729BC57D59C569DD4229F67A /* BJJAnnotateTests */ = {
 			isa = PBXGroup;
 			children = (
-				52F86E2BE85D63E3B618A1A2 /* Fixtures */,
 				EF717120E3F27BB752771A7A /* Support */,
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
 				1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */,
+				BCC0A2F849C62996EA3982B6 /* Fixtures */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
 				D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */,
 				C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */,
@@ -213,6 +207,7 @@
 		D2F47B02DDE9FC817CEE220B /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				8A3200728C61554EB8226051 /* CocoModel.swift */,
 				0DB4EA75497C48A21AD33473 /* JSONValue.swift */,
 			);
 			path = Domain;
@@ -342,7 +337,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B6C5B5CEF72B5276000AAEB /* example.coco.json in Resources */,
+				13B339F6FB82F246E63AD5C9 /* Fixtures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -363,6 +358,7 @@
 			files = (
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
 				EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */,
+				F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */,
 				B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */,
 				51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */,
 				FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */,

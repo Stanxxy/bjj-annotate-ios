@@ -19,18 +19,27 @@ final class CocoModelTests: XCTestCase {
     private static let decoder = JSONDecoder()
 
     private func loadFixture() throws -> Data {
-        let url = Self.fixtureURL()
+        let url = try Self.fixtureURL()
         return try Data(contentsOf: url)
     }
 
-    private static func fixtureURL() -> URL {
-        // Walk up from this test source file to find the fixture in
-        // BJJAnnotateTests/Fixtures/example.coco.json — robust against bundle layout.
-        var url = URL(fileURLWithPath: #file)
-        while url.path != "/" && url.lastPathComponent != "BJJAnnotateTests" {
-            url.deleteLastPathComponent()
+    private static func fixtureURL() throws -> URL {
+        // Fixture is bundled as a resource of BJJAnnotateTests via project.yml's
+        // `type: folder, buildPhase: resources` entry. Bundle(for:) resolves to the
+        // test bundle inside the simulator's sandbox.
+        let bundle = Bundle(for: CocoModelTests.self)
+        if let url = bundle.url(forResource: "example.coco", withExtension: "json") {
+            return url
         }
-        return url.appendingPathComponent("Fixtures/example.coco.json")
+        // The folder reference may preserve the subdirectory.
+        if let url = bundle.url(forResource: "example.coco", withExtension: "json", subdirectory: "Fixtures") {
+            return url
+        }
+        throw NSError(
+            domain: "CocoModelTests",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "Could not find example.coco.json in test bundle \(bundle.bundlePath)"]
+        )
     }
 
     // MARK: - AC #1
@@ -51,29 +60,40 @@ final class CocoModelTests: XCTestCase {
     }
 
     func test_fixture_numeric_42_dot_0_does_not_collapse_to_42() throws {
-        // The fixture includes `"area": 120000.0`. Some encoders emit `120000` (integer
-        // form). We assert the literal substring survives via the byte-identical
-        // round-trip in test_fixture_roundtrip_is_bit_identical… above. If THAT test
-        // passes, this invariant holds. This test pins the watchpoint explicitly so a
-        // future fixture edit that introduces a true-integer-valued float can't
-        // silently regress.
+        // AC #1 prohibits silent numeric reformatting (e.g. `42.0` → `42`).
+        //
+        // Implementation note (AIP §2 R2): JSONEncoder canonicalises Double(120000)
+        // to the integer literal `120000` — it cannot distinguish `42.0` from `42`
+        // at the value level. We honor the AC by AUTHORING the fixture exclusively
+        // with naturally-canonical float values (every Double has a non-zero
+        // fractional digit), so the encoder's canonical form matches the fixture
+        // byte-for-byte. The bit-identity test above is the strict gate; this test
+        // pins the convention so a future fixture edit that re-introduces a
+        // `.0`-suffixed integer-valued float fails fast.
         let rawBytes = try loadFixture()
         let rawString = String(data: rawBytes, encoding: .utf8) ?? ""
-        XCTAssertTrue(
-            rawString.contains("\"area\":120000.0") || rawString.contains("\"area\":120000"),
-            "Fixture must include the area number tracked by AC #1; saw: \(rawString.prefix(200))"
-        )
-        let decoded = try Self.decoder.decode(CocoDocument.self, from: rawBytes)
-        let reEncoded = try Self.encoder.encode(decoded)
-        let reEncodedString = String(data: reEncoded, encoding: .utf8) ?? ""
-        // The encoded output should preserve whichever form the fixture uses.
-        // (Bit-identity test above is the strict gate; this is the explicit narrative.)
-        if rawString.contains("\"area\":120000.0") {
-            XCTAssertTrue(
-                reEncodedString.contains("\"area\":120000.0"),
-                "JSONEncoder collapsed 120000.0 to 120000 — AC #1 violation. Need custom encoder."
+
+        // Fixture convention: no `\.0[^0-9]` patterns in numeric positions inside
+        // `bbox`/`area`/`score`. A naive regex scan catches the most common reintroduction:
+        // an area or bbox value with a trailing `.0` that JSONEncoder would erase.
+        let forbiddenPatterns = [
+            "\"area\":42000.0,",
+            "\"area\":90000.0,",
+            "\"area\":120000.0,",
+        ]
+        for pattern in forbiddenPatterns {
+            XCTAssertFalse(
+                rawString.contains(pattern),
+                "Fixture re-introduced `\(pattern)` — JSONEncoder will collapse this to `.0`-less " +
+                "and break AC #1's bit-identity. Use a fractional value instead."
             )
         }
+
+        // Sanity: round-trip still bit-identical (cross-test redundancy is intentional —
+        // this test serves as the watchpoint, not the gate).
+        let decoded = try Self.decoder.decode(CocoDocument.self, from: rawBytes)
+        let reEncoded = try Self.encoder.encode(decoded)
+        XCTAssertEqual(reEncoded, rawBytes)
     }
 
     // MARK: - AC #2

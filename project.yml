@@ -45,6 +45,11 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: BJJAnnotateTests
+        excludes:
+          - "Fixtures/**"
+      - path: BJJAnnotateTests/Fixtures
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: BJJAnnotate
     settings:
