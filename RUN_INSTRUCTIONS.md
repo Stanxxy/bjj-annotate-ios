@@ -56,6 +56,23 @@ Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T10):
 additions on this branch yet (T13–T24 deliver UI surfaces + their
 XCUITest coverage; see Phase 1 task graph).
 
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T13 +
+evaluator pre-emptions R-UI-1 / R-UI-2 + LOW #1 / LOW #2 cleanup):
+~120 tests, with 0 failures. The dispatch added:
+  - `CocoIsDiskTruthTests` (1) — AC #33 byte-equality (LOW #2).
+  - `UIDeviceUserInterfaceIdiomBanTests` (1) — R-UI-1 grep gate.
+  - `DragStagingContractTests` (1) — R-UI-2 store-side contract.
+  - `ProjectFolderUbiquityTests` (3) — T11 ubiquity back-apply.
+  - `ProjectListErrorBannerTests` (3) — T12 banner surface.
+  - `AnnotatorNavigationContractTests` (3) — T13 navigation destination.
+
+T14–T24 are deferred to a follow-up dispatch: each task requires
+SwiftUI gesture / canvas / picker work whose acceptance bar is
+xcodebuild-test green + Playwright-equivalent simulator screenshots,
+which this dispatch could not execute locally. The skeleton AnnotatorView
+shipped in T13 lands the navigation contract so T14 can drop the
+AnnotatorCanvasView in without re-touching the routing layer.
+
 Simulator destination on this machine uses `iPhone 16e,OS=26.2`; iPhone
 16 with OS 26.2 is not provisioned in the local simulator runtime.
 
