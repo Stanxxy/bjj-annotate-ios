@@ -9,6 +9,7 @@ import Observation
 /// These tests use a no-op scheduler (`SilentScheduler`) so the store can be
 /// exercised independently of disk I/O. The scheduler conforms to the same
 /// protocol the production CocoFileCoordinator implements (T8/T9).
+@MainActor
 final class AnnotationStoreTests: XCTestCase {
 
     // MARK: - Fixtures

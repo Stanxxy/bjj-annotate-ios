@@ -19,8 +19,10 @@
 		311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */; };
 		364AE88F8191C641174738D7 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */; };
 		38E36C09ECDDA8ED73E9CF5B /* AthleteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */; };
+		3AF978D984CA3173B1DE92BE /* BBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B862EB7AD67744FB5E772D66 /* BBox.swift */; };
 		3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */; };
 		4405AA9CB7AA8C62B0E7E77B /* SilentScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B851A77102048ED318E9D00 /* SilentScheduler.swift */; };
+		47D35B32A4FE72DA93F46249 /* AnnotationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A8F8F0D75867642D7A5119 /* AnnotationStore.swift */; };
 		4A812A238F8AE2208EDB8BB9 /* AthleteRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */; };
 		51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB4EA75497C48A21AD33473 /* JSONValue.swift */; };
 		5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */; };
@@ -98,6 +100,8 @@
 		9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyGridUITests.swift; sourceTree = "<group>"; };
 		9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderTests.swift; sourceTree = "<group>"; };
 		A2E04776E5022074A20F06C2 /* BJJAnnotate.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BJJAnnotate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3A8F8F0D75867642D7A5119 /* AnnotationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStore.swift; sourceTree = "<group>"; };
+		B862EB7AD67744FB5E772D66 /* BBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BBox.swift; sourceTree = "<group>"; };
 		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
 		BCC0A2F849C62996EA3982B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fixtures; path = BJJAnnotateTests/Fixtures; sourceTree = SOURCE_ROOT; };
 		C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyGrepTests.swift; sourceTree = "<group>"; };
@@ -222,8 +226,10 @@
 		D2F47B02DDE9FC817CEE220B /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				A3A8F8F0D75867642D7A5119 /* AnnotationStore.swift */,
 				EF12FB9EDD2399642E2D515B /* AthletePalette.swift */,
 				3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */,
+				B862EB7AD67744FB5E772D66 /* BBox.swift */,
 				8A3200728C61554EB8226051 /* CocoModel.swift */,
 				0DB4EA75497C48A21AD33473 /* JSONValue.swift */,
 			);
@@ -374,8 +380,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47D35B32A4FE72DA93F46249 /* AnnotationStore.swift in Sources */,
 				C60E8B9A3623754C2AE22E71 /* AthletePalette.swift in Sources */,
 				38E36C09ECDDA8ED73E9CF5B /* AthleteRegistry.swift in Sources */,
+				3AF978D984CA3173B1DE92BE /* BBox.swift in Sources */,
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
 				EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */,
 				F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */,
