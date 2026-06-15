@@ -4,8 +4,9 @@ import SwiftUI
 ///
 /// `AthletePickerModel` is the pure value-type that drives the SwiftUI sheet:
 ///   - `rows` are the existing `athlete-N` ids, sorted ascending.
-///   - `bottomRow` is either the `+ New athlete` allocator or the locked
-///     `Project full — 8 athletes max.` copy at the cap.
+///   - `bottomRow` is either the new-athlete allocator row (locked copy via
+///     `LockedCopy.newAthleteRow`) or the project-full row (locked copy via
+///     `LockedCopy.projectFullAthleteCap`) at the cap.
 ///   - `select(...)` rebinds; `allocateNew(...)` allocates + binds + returns
 ///     the new id (or nil at cap).
 ///

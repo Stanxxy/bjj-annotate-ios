@@ -59,7 +59,16 @@ struct AnnotatorView: View {
                     .transition(.opacity)
                     .accessibilityIdentifier("Annotator.BoxTooSmallToast")
                     .task {
-                        try? await Task.sleep(nanoseconds: 1_800_000_000)
+                        // Task.sleep only throws on cancellation, which is the
+                        // explicit signal that the toast was already dismissed
+                        // (e.g., the user navigated back). In that case we
+                        // simply abandon the auto-hide — the rejection state
+                        // belongs to the view's lifecycle.
+                        do {
+                            try await Task.sleep(nanoseconds: 1_800_000_000)
+                        } catch {
+                            return
+                        }
                         await MainActor.run { rejectionToastVisible = false }
                     }
             }
