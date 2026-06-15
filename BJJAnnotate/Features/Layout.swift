@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Size-class-driven layout helpers. R-UI-1 mandate: ALL adaptive layout in
 /// BJJAnnotate must branch on `@Environment(\.horizontalSizeClass)`, NEVER on
-/// `UIDevice.current.userInterfaceIdiom`. The latter does not reflect runtime
-/// size class changes (Slide Over, Split View, Stage Manager) and would lock
-/// us into a Phase-1 bug on iPad multitasking.
+/// the UIKit device-idiom flag. The device-idiom signal does not reflect
+/// runtime size class changes (Slide Over, Split View, Stage Manager) and would
+/// lock us into a Phase-1 bug on iPad multitasking. The companion grep gate
+/// `UIDeviceUserInterfaceIdiomBanTests` enforces this at CI time.
 ///
 /// Use via `Layout.AdaptiveAnchor { compact in ... }` or by reading
 /// `\.horizontalSizeClass` directly in a view's body.
