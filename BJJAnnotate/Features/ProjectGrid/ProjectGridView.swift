@@ -8,6 +8,9 @@ import SwiftUI
 struct ProjectGridView: View {
     @Bindable var viewModel: ProjectGridViewModel
     let cache: ThumbnailCache
+    /// T13: invoked when the user taps a thumbnail. RootView pushes
+    /// `NavigationDestination.annotator(...)` in response.
+    var onOpen: (URL) -> Void = { _ in }
 
     private let columns: [GridItem] = [
         GridItem(.adaptive(minimum: 100, maximum: 160), spacing: 8)
@@ -67,7 +70,13 @@ struct ProjectGridView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(urls, id: \.self) { url in
-                    ThumbnailCell(url: url, cache: cache)
+                    Button {
+                        onOpen(url)
+                    } label: {
+                        ThumbnailCell(url: url, cache: cache)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the annotator for this image.")
                 }
             }
             .padding(.horizontal, 16)
