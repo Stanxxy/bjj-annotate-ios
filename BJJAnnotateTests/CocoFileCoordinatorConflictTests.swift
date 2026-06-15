@@ -24,6 +24,12 @@ final class CocoFileCoordinatorConflictTests: XCTestCase {
         try await super.tearDown()
     }
 
+    private static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return e
+    }()
+
     private func makeDoc(athletes: [Athlete], stickyCategoryId: Int) -> CocoDocument {
         let meta = BjjAnnotateMeta(
             schema_version: 1,
@@ -52,13 +58,13 @@ final class CocoFileCoordinatorConflictTests: XCTestCase {
         let modificationDate = Date(timeIntervalSince1970: 1_800_000_000)
 
         // Seed the winner on disk.
-        let bytes = try JSONEncoder().encode(winner)
+        let bytes = try Self.encoder.encode(winner)
         try bytes.write(to: url)
 
         // Emit sidecar.
         let event = try ConflictSidecar.emit(
             directory: temp.url,
-            losersBytes: try JSONEncoder().encode(loser),
+            losersBytes: try Self.encoder.encode(loser),
             loserModificationDate: modificationDate,
             winnerURL: url,
             differingAnnotationIds: [42, 43]
@@ -78,7 +84,7 @@ final class CocoFileCoordinatorConflictTests: XCTestCase {
         // Sidecar bytes match loser verbatim (AC #34 + AC #36 — no merge, no
         // transformation; the loser is preserved exactly so the user can inspect).
         let sidecarBytes = try Data(contentsOf: event.sidecarURL)
-        XCTAssertEqual(sidecarBytes, try JSONEncoder().encode(loser))
+        XCTAssertEqual(sidecarBytes, try Self.encoder.encode(loser))
 
         XCTAssertEqual(event.winnerURL, url)
         XCTAssertEqual(event.differingAnnotationIds, [42, 43])
@@ -97,13 +103,13 @@ final class CocoFileCoordinatorConflictTests: XCTestCase {
                             stickyCategoryId: 2)
 
         // Seed disk with winner.
-        let winnerBytes = try JSONEncoder().encode(winner)
+        let winnerBytes = try Self.encoder.encode(winner)
         try winnerBytes.write(to: url)
 
         // Emit conflict.
         let event = try ConflictSidecar.emit(
             directory: temp.url,
-            losersBytes: try JSONEncoder().encode(loser),
+            losersBytes: try Self.encoder.encode(loser),
             loserModificationDate: Date(),
             winnerURL: url,
             differingAnnotationIds: []
