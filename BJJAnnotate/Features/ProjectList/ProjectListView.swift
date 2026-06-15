@@ -65,10 +65,10 @@ struct ProjectListView: View {
             Text(lastError ?? "")
         })
         .task {
-            viewModel.refresh()
+            await viewModel.refresh()
         }
         .refreshable {
-            viewModel.refresh()
+            await viewModel.refresh()
         }
     }
 
@@ -107,7 +107,7 @@ struct ProjectListView: View {
         .listStyle(.insetGrouped)
         .accessibilityIdentifier("ProjectList.List")
         .accessibilityAction(named: "Refresh") {
-            viewModel.refresh()
+            Task { await viewModel.refresh() }
         }
         .background(Color(.systemGroupedBackground))
     }
@@ -117,8 +117,10 @@ struct ProjectListView: View {
         switch row.state {
         case .ok(let displayName, let lastOpenedAt):
             Button {
-                viewModel.touchOpened(rowID: row.id)
+                // Navigate immediately; the MRU bump + refresh runs async so it never blocks
+                // the push (BUG B).
                 onOpen(row)
+                Task { await viewModel.touchOpened(rowID: row.id) }
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "folder")
@@ -179,19 +181,21 @@ struct ProjectListView: View {
 
     private func handlePick(url: URL, mode: PickerMode) {
         pickerMode = nil
-        do {
-            switch mode {
-            case .newProject:
-                let newID = try viewModel.saveNewlyPickedFolder(url: url)
-                // Find the row we just created and open it.
-                if let newRow = viewModel.rows.first(where: { $0.id == newID }) {
-                    onOpen(newRow)
+        Task {
+            do {
+                switch mode {
+                case .newProject:
+                    let newID = try await viewModel.saveNewlyPickedFolder(url: url)
+                    // Find the row we just created and open it.
+                    if let newRow = viewModel.rows.first(where: { $0.id == newID }) {
+                        onOpen(newRow)
+                    }
+                case .relocate(let rowID):
+                    try await viewModel.relocate(rowID: rowID, to: url)
                 }
-            case .relocate(let rowID):
-                try viewModel.relocate(rowID: rowID, to: url)
+            } catch {
+                lastError = (error as? BookmarkResolutionError).map(describe) ?? error.localizedDescription
             }
-        } catch {
-            lastError = (error as? BookmarkResolutionError).map(describe) ?? error.localizedDescription
         }
     }
 

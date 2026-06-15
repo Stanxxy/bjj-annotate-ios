@@ -86,7 +86,10 @@ struct SystemBookmarkResolver: BookmarkResolving {
 final class BookmarkStore {
     private let defaults: UserDefaults
     private let key: String
-    private let resolver: BookmarkResolving
+    /// Bookmark resolution seam. Exposed (not `private`) so `ProjectListViewModel.refresh()` can
+    /// pass it into the off-main pure-resolution path (`resolvePure(data:resolver:)`) without
+    /// crossing the store's mutable state into the background task (Finding #3 data-race fix).
+    let resolver: BookmarkResolving
     private let logger: Logger
 
     /// Non-blocking surface for the most recent persistence fault. UI banners on non-nil and
@@ -171,14 +174,69 @@ final class BookmarkStore {
     /// On `bookmarkDataIsStale == true`, the bookmark is re-minted and rewritten (PM AC #9).
     /// Display name is NOT cached — callers consume `result.url.lastPathComponent` at render
     /// time (PM Marker D).
+    ///
+    /// This is the @MainActor-friendly convenience used by single-bookmark callers
+    /// (`ProjectGridViewModel.load()` resolves ONE bookmark). It both resolves AND applies the
+    /// stale-refresh side effects (`replace` + `lastError`) inline. The list view model must NOT
+    /// use this off the main actor — it would mutate store state from a background thread (data
+    /// race). The list path uses `Self.resolvePure(data:resolver:)` off-main and applies the
+    /// side effects back on the main actor via `applyRefresh(...)`.
     func resolve(id: String) throws -> URL {
         guard let entry = loadAll().first(where: { $0.id == id }) else {
             throw BookmarkResolutionError.unknownId
         }
 
+        let result = Self.resolvePure(data: entry.bookmark, resolver: resolver)
+
+        // Apply the (pure) outcome's side effects on this (main-actor) caller's thread.
+        if let refreshed = result.refreshedBookmark {
+            replace(id: id, bookmark: refreshed, openedAt: entry.lastOpenedAt)
+        }
+        if let staleFailure = result.staleRefreshFailureDescription {
+            logger.error("Stale-bookmark refresh failed for id \(id, privacy: .public): \(staleFailure, privacy: .public)")
+            lastError = .staleRefreshFailed(description: staleFailure)
+        }
+
+        return try result.urlOrThrow()
+    }
+
+    // MARK: - Pure resolution (off-main-safe)
+
+    /// Value-type outcome of resolving a single bookmark blob WITHOUT mutating any store state.
+    ///
+    /// BUG B / Finding #3 (data race): `ProjectListViewModel.refresh()` resolves N bookmarks off
+    /// the main actor. `resolve(id:)` mutates the `@Observable` store (`replace` UserDefaults
+    /// write + `lastError`), which is unsafe from a background thread. So the heavy I/O
+    /// (`URL(resolvingBookmarkData:)`, re-mint, existence/dir gates) runs in `resolvePure` and
+    /// returns this value type; the caller applies the persistence + error side effects back on
+    /// the main actor.
+    struct PureResolution {
+        /// The resolved-and-validated URL on success; `nil` if resolution failed.
+        let url: URL?
+        /// The resolution error if it failed; `nil` on success.
+        let error: BookmarkResolutionError?
+        /// Freshly-minted bookmark bytes to persist via `replace(id:bookmark:)`, when the
+        /// resolver reported staleness and the re-mint succeeded. `nil` otherwise (no write).
+        let refreshedBookmark: Data?
+        /// Non-fatal stale-refresh failure description to surface via `lastError`, when the
+        /// re-mint threw on an otherwise-recoverable path. `nil` if no failure to surface.
+        let staleRefreshFailureDescription: String?
+
+        func urlOrThrow() throws -> URL {
+            if let url { return url }
+            throw error ?? BookmarkResolutionError.notFound
+        }
+    }
+
+    /// Pure (no-`self`-mutation) bookmark resolution. Safe to call from a detached/background
+    /// task: it touches only the injected `resolver` (a value/seam) and `FileManager`, never the
+    /// store's `@Observable` state. All BUG A rename-recovery logic is preserved here; the only
+    /// difference from `resolve(id:)` is that the persistence (`replace`) and `lastError` side
+    /// effects are RETURNED as values for the main actor to apply, instead of mutated inline.
+    static func resolvePure(data: Data, resolver: BookmarkResolving) -> PureResolution {
         let outcome: (url: URL, isStale: Bool)
         do {
-            outcome = try resolver.resolve(data: entry.bookmark)
+            outcome = try resolver.resolve(data: data)
         } catch let nsError as NSError {
             // Foundation may surface "file does not exist" through several error domains:
             //   - NSCocoaErrorDomain / NSFileReadNoSuchFileError (Cocoa file APIs)
@@ -186,54 +244,97 @@ final class BookmarkStore {
             //   - NSFileProviderInternalErrorDomain / NSURLErrorDomain in iCloud cases
             // We also normalize on the underlying error chain since the URL bookmark API
             // wraps the original ENOENT inside a generic "Couldn't open" wrapper.
-            if Self.isFileNotFoundError(nsError) {
-                throw BookmarkResolutionError.notFound
-            }
-            throw BookmarkResolutionError.foundation(nsError.localizedDescription)
+            let resolutionError: BookmarkResolutionError = isFileNotFoundError(nsError)
+                ? .notFound
+                : .foundation(nsError.localizedDescription)
+            return PureResolution(url: nil, error: resolutionError, refreshedBookmark: nil, staleRefreshFailureDescription: nil)
         }
 
-        let url = outcome.url
+        // BUG A (V5 rename): on an iCloud folder RENAME the resolver reports `isStale == true`
+        // and the URL it first hands back can still point at the STALE original path. If we ran
+        // the `fileExists` gate against that stale URL we'd wrongly throw `.notFound` and show
+        // the "tap to relocate" copy for a folder that merely got renamed.
+        //
+        // So when stale, re-mint FIRST: that re-resolves the bookmark to the folder's CURRENT
+        // location and yields the URL we then existence-check. The refreshed bytes are returned
+        // (not persisted here) so the main actor performs the UserDefaults write race-free.
+        // The TRASH case (AC #6) is preserved: if the folder is genuinely gone the re-mint also
+        // resolves to a non-existent path (or fails), and the existence gate below still yields
+        // `.notFound`.
+        let url: URL
+        var refreshedBookmark: Data? = nil
+        var staleRefreshFailureDescription: String? = nil
+        if outcome.isStale {
+            let refresh = refreshStaleBookmarkPure(resolvedURL: outcome.url, resolver: resolver)
+            url = refresh.url
+            refreshedBookmark = refresh.refreshedBookmark
+            staleRefreshFailureDescription = refresh.failureDescription
+        } else {
+            url = outcome.url
+        }
 
-        // Existence check — needed for AC #6 (folder moved to Trash; URL resolves but path is gone).
+        // Existence check — runs against the CURRENT url (refreshed on rename). AC #6: folder
+        // moved to Trash resolves to a path that no longer exists → `.notFound`.
         if !FileManager.default.fileExists(atPath: url.path) {
-            throw BookmarkResolutionError.notFound
+            return PureResolution(url: nil, error: .notFound, refreshedBookmark: refreshedBookmark, staleRefreshFailureDescription: staleRefreshFailureDescription)
         }
 
         var isDir: ObjCBool = false
         FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
         if !isDir.boolValue {
-            throw BookmarkResolutionError.notADirectory
+            return PureResolution(url: nil, error: .notADirectory, refreshedBookmark: refreshedBookmark, staleRefreshFailureDescription: staleRefreshFailureDescription)
         }
 
-        if outcome.isStale {
-            refreshStaleBookmark(id: id, url: url, previousLastOpenedAt: entry.lastOpenedAt)
-        }
-
-        return url
+        return PureResolution(url: url, error: nil, refreshedBookmark: refreshedBookmark, staleRefreshFailureDescription: staleRefreshFailureDescription)
     }
 
-    /// PM AC #9 / Finding #7: re-mint and persist the bookmark after iOS reports staleness.
-    /// Failure here is non-fatal — the resolved URL is still usable for THIS session; we just
-    /// log and surface `lastError` so the next launch can retry.
-    private func refreshStaleBookmark(id: String, url: URL, previousLastOpenedAt: Date) {
-        // The test seam (`FakeBookmarkResolver`) returns canned URLs that may not be backed
-        // by a real security-scoped resource; we still attempt to start access for production
-        // bookmarks. If `startAccessing` returns nil we proceed without it — `mintBookmark`
-        // may still succeed for local file URLs in tests, and will throw for real bookmarks
-        // which we then surface.
-        let token = startAccessing(url: url)
+    /// Pure (no-`self`-mutation) stale-bookmark refresh. PM AC #9 / Finding #7 + BUG A: re-mint
+    /// the bookmark after iOS reports staleness, then re-resolve the freshly-minted blob to
+    /// obtain the folder's CURRENT URL. Safe to call off the main actor — it touches only the
+    /// injected `resolver` and returns the persistence/`lastError` side effects as values for the
+    /// caller to apply on the main actor.
+    ///
+    /// Returns:
+    ///  - `url`: the URL for the downstream existence/directory gates.
+    ///     - On a RENAME the re-resolve yields the NEW (existing) path → silent recovery.
+    ///     - On a TRASH the re-resolve yields a path that still doesn't exist (or re-mint/resolve
+    ///       fails) → returns the best URL and the existence gate yields `.notFound` (AC #6).
+    ///  - `refreshedBookmark`: bytes to persist via `replace(...)` on success, else `nil`.
+    ///  - `failureDescription`: non-fatal re-mint failure to surface via `lastError`, else `nil`.
+    private static func refreshStaleBookmarkPure(
+        resolvedURL: URL,
+        resolver: BookmarkResolving
+    ) -> (url: URL, refreshedBookmark: Data?, failureDescription: String?) {
+        // The test seam returns canned URLs that may not be backed by a real security-scoped
+        // resource; we still attempt to start access for production bookmarks. If
+        // `startAccessingSecurityScopedResource` returns false we proceed without it —
+        // `mintBookmark` may still succeed for local file URLs in tests, and will throw for real
+        // bookmarks which we then surface.
+        let started = resolvedURL.startAccessingSecurityScopedResource()
         defer {
-            if let token = token { stopAccessing(url: url, token: token) }
+            if started { resolvedURL.stopAccessingSecurityScopedResource() }
         }
 
         do {
-            let refreshed = try resolver.mintBookmark(for: url)
-            replace(id: id, bookmark: refreshed, openedAt: previousLastOpenedAt)
+            let refreshed = try resolver.mintBookmark(for: resolvedURL)
+            // Re-resolve the refreshed bookmark to pick up the folder's current location
+            // (the whole point of BUG A's rename recovery). If this re-resolve fails we still
+            // hand the refreshed bytes back for persistence; fall back to the originally-resolved
+            // URL for the existence gate.
+            if let reResolved = try? resolver.resolve(data: refreshed) {
+                return (reResolved.url, refreshed, nil)
+            }
+            return (resolvedURL, refreshed, nil)
         } catch {
+            // BUG A regression guard: re-mint can legitimately FAIL when the folder is genuinely
+            // gone (Trash). That is NOT a programmer error — we must NOT `assertionFailure` here
+            // (it would crash the legitimate AC #6 trash flow now that re-mint runs before the
+            // existence gate). We return the failure description so the caller surfaces
+            // `lastError` (a refresh failure on an *existing* folder stays visible to the UI), and
+            // return the originally-resolved URL so the existence gate makes the final call
+            // (→ `.notFound` for a trashed folder).
             let description = (error as NSError).localizedDescription
-            logger.error("Stale-bookmark refresh failed for id \(id, privacy: .public): \(description, privacy: .public)")
-            assertionFailure("Stale-bookmark refresh failed: \(description)")
-            lastError = .staleRefreshFailed(description: description)
+            return (resolvedURL, nil, description)
         }
     }
 
