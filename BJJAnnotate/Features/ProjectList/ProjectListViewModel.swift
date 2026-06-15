@@ -134,4 +134,27 @@ final class ProjectListViewModel {
         bookmarkStore.touch(id: rowID)
         await refresh()
     }
+
+    // MARK: - T12: lastError banner surface
+
+    /// Human-readable description of the current persistence fault, or `nil` when
+    /// the store has no surfaced error. Drives the non-blocking banner on
+    /// `ProjectListView`.
+    var bannerMessage: String? {
+        guard let err = bookmarkStore.lastError else { return nil }
+        switch err {
+        case .decodeFailed(let description):
+            return "Couldn't read saved projects: \(description)"
+        case .encodeFailed(let description):
+            return "Couldn't save project list: \(description)"
+        case .staleRefreshFailed(let description):
+            return "Refreshing a saved project failed: \(description)"
+        }
+    }
+
+    /// Clears `bookmarkStore.lastError` so the banner dismisses. UI invokes this
+    /// from the banner's close action.
+    func dismissBanner() {
+        bookmarkStore.clearLastError()
+    }
 }

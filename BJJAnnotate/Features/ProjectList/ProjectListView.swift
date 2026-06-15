@@ -28,6 +28,13 @@ struct ProjectListView: View {
                 populatedState
             }
         }
+        .safeAreaInset(edge: .top) {
+            // T12: non-blocking banner driven by BookmarkStore.lastError.
+            // Renders above content; dismiss action calls clearLastError().
+            if let message = viewModel.bannerMessage {
+                bannerView(message: message)
+            }
+        }
         .navigationTitle("Projects")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -161,6 +168,33 @@ struct ProjectListView: View {
             .accessibilityLabel("Folder not found, tap to relocate")
             .accessibilityHint("Presents the Files folder picker to relocate this project.")
         }
+    }
+
+    @ViewBuilder
+    private func bannerView(message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                viewModel.dismissBanner()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Dismiss")
+            .accessibilityIdentifier("ProjectList.Banner.Dismiss")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(.secondarySystemBackground))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ProjectList.Banner")
     }
 
     private var openFolderButton: some View {
