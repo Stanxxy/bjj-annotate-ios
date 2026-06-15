@@ -3,7 +3,7 @@ import Foundation
 /// Errors surfaced from `UbiquityResolver`. The most important is
 /// `materializationTimeout` which `CocoFileCoordinator` maps to
 /// `AnnotationStoreError.icloudMaterializationTimeout` and the locked banner copy
-/// "Waiting for iCloud — pull to retry." (AC #30).
+/// `LockedCopy.icloudWaitingBanner` (AC #30).
 enum UbiquityError: Error, Equatable {
     case materializationTimeout
     case startDownloadFailed(String)

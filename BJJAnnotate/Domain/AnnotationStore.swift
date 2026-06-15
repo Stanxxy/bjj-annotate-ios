@@ -148,7 +148,7 @@ final class AnnotationStore {
                 next.bjj_annotate_meta?.athletes.append(allocated)
                 next.annotations[idx].attributes.athlete_id = allocated.id
             }
-            // If full, athlete_id stays nil — UI will surface 'Project full' on picker open.
+            // If full, athlete_id stays nil — UI surfaces `LockedCopy.projectFullAthleteCap` on picker open.
             next.annotations[idx].keypoints = []
             next.annotations[idx].num_keypoints = 0
         } else {
@@ -179,7 +179,7 @@ final class AnnotationStore {
 
     /// Allocates a new athlete and binds it to the given instance. Returns the new
     /// athlete-id, or nil if the project is at the 8-athlete cap (caller renders
-    /// 'Project full' locked string).
+    /// `LockedCopy.projectFullAthleteCap`).
     @discardableResult
     func allocateAndBindAthlete(toInstanceId instanceId: Int) -> String? {
         var next = coco

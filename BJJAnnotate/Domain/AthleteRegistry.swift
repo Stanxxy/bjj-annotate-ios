@@ -2,7 +2,7 @@ import Foundation
 
 /// Stateless allocator for `athlete-N` ids. PM Marker B: ids are NEVER reused;
 /// allocation is `max(existing_ids) + 1`, capped at 8 (Designer §3.1 +
-/// PM addendum #10 "Project full — 8 athletes max.").
+/// PM addendum #10; locked copy lives in `LockedCopy.projectFullAthleteCap`).
 ///
 /// The registry has no instance state — callers pass the live athletes list at
 /// each allocation. This is intentional: it makes the allocator trivially testable,
@@ -11,7 +11,7 @@ import Foundation
 enum AthleteRegistry {
 
     /// Hard cap. AC #11 / PM addendum #10. Beyond this, `allocate` returns nil and
-    /// the UI renders the "Project full" row in the athlete picker.
+    /// the UI renders `LockedCopy.projectFullAthleteCap` in the athlete picker.
     static let cap = 8
 
     /// Returns the next athlete, or nil if the project is full.
