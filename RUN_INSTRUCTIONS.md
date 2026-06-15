@@ -66,12 +66,42 @@ evaluator pre-emptions R-UI-1 / R-UI-2 + LOW #1 / LOW #2 cleanup):
   - `ProjectListErrorBannerTests` (3) — T12 banner surface.
   - `AnnotatorNavigationContractTests` (3) — T13 navigation destination.
 
-T14–T24 are deferred to a follow-up dispatch: each task requires
-SwiftUI gesture / canvas / picker work whose acceptance bar is
-xcodebuild-test green + Playwright-equivalent simulator screenshots,
-which this dispatch could not execute locally. The skeleton AnnotatorView
-shipped in T13 lands the navigation contract so T14 can drop the
-AnnotatorCanvasView in without re-touching the routing layer.
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T14–T24):
+~170 unit tests + 9 UI tests, 0 failures (code-complete, pending local
+`xcodebuild test`). The dispatch added:
+  - `AnnotatorCanvasGeometryTests` (8) — T14 zoom clamp, pan, double-tap-to-fit, view-to-image.
+  - `ProjectListPickerErrorRoutingTests` (4) + `ProjectListLegacyAlertRemovalTests` (1) — T14 L-3 carry-forward.
+  - `BoxIntakeTests` (10) — T15 sub-4px gate + clamp + normalization.
+  - `ProjectFolderUbiquityLockHardeningTests` (2) — T15 L-1 carry-forward (os_unfair_lock).
+  - `BoxHandleTests` (13) — T16 selection + 8 handles + resize/move.
+  - `ClassChipRowTests` (4) — T17 chip dispatch + sticky + Ref auto-bind.
+  - `AthletePickerTests` (6) — T18 athlete picker model + 8-cap.
+  - `InstanceListModelTests` (4) — T19 instance list rows.
+  - `ConflictBannerTests` (5) — T20 conflict banner + diff modal.
+  - `LifecycleFlushBridgeTests` (3) — T21 willResignActive flush + L-1 hardening.
+  - `AnnotatorImagePresenceTests` (2) — T22 zero-image presence.
+  - `MobileFirstAuditUITests` (4) — T23 AC #14 tap targets + overflow.
+  - `GoldenPathUITests` (1, 8 assertions) — T24 thumbnail → annotator → back → relaunch.
+
+L-1 hardening applied in T15 (`ProjectFolder.applyUbiquityGate`) and T21
+(`LifecycleFlushBridge.flushSynchronously`). L-2 left as a Phase 2
+diagnostic marker comment per the carry-forward. L-3 consolidation
+landed in T14 — `ProjectListView` no longer keeps a parallel `@State
+private var lastError` alert; picker errors route through
+`bookmarkStore.lastError` (`.pickerFailed` case) and surface via the
+same `safeAreaInset` banner.
+
+Deferred to a follow-up integration dispatch (not blocking T14–T24
+code-complete sign-off):
+  - Per-image `AnnotationStore` + `CocoFileCoordinator` lifecycle owned
+    by `AnnotatorView` (currently the canvas accepts an optional store
+    for gesture testing; the view does not yet construct one). Once the
+    store lifecycle lands, `ClassChipRow` + `AthletePicker` + `InstanceList`
+    + `ConflictBanner` + `.flushOnWillResignActive(...)` from T17/T18/T19/
+    T20/T21 plug straight in — they are individually unit-tested and the
+    types are stable.
+  - Conflict surface on `ProjectGridView` (AC #34) — needs a project-
+    level conflict store, separate from the per-image one.
 
 Simulator destination on this machine uses `iPhone 16e,OS=26.2`; iPhone
 16 with OS 26.2 is not provisioned in the local simulator runtime.
