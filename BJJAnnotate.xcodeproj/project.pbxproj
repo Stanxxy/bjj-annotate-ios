@@ -18,6 +18,7 @@
 		311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */; };
 		364AE88F8191C641174738D7 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */; };
 		3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */; };
+		51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB4EA75497C48A21AD33473 /* JSONValue.swift */; };
 		5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */; };
 		629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */; };
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
@@ -58,6 +59,7 @@
 
 /* Begin PBXFileReference section */
 		0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopy.swift; sourceTree = "<group>"; };
+		0DB4EA75497C48A21AD33473 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
 		17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				82848755F875FB2BDFFD5345 /* App */,
+				D2F47B02DDE9FC817CEE220B /* Domain */,
 				10B8B40D74110C54138117B2 /* Features */,
 				A5C111F5C7BF351568572A23 /* Persistence */,
 				25772D89C0B1290AF8411983 /* Assets.xcassets */,
@@ -191,6 +194,14 @@
 				E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */,
 			);
 			path = ProjectGrid;
+			sourceTree = "<group>";
+		};
+		D2F47B02DDE9FC817CEE220B /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				0DB4EA75497C48A21AD33473 /* JSONValue.swift */,
+			);
+			path = Domain;
 			sourceTree = "<group>";
 		};
 		E1E18FA839E899759F695208 /* BJJAnnotateUITests */ = {
@@ -330,6 +341,7 @@
 				0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */,
 				EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */,
 				B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */,
+				51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */,
 				FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */,
 				0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */,
 				BC4EDE80FC6008DB7DBFC539 /* ProjectGridView.swift in Sources */,
