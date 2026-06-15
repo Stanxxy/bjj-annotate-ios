@@ -46,6 +46,7 @@
 		C60E8B9A3623754C2AE22E71 /* AthletePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF12FB9EDD2399642E2D515B /* AthletePalette.swift */; };
 		D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */; };
 		EB06DF64954CCFD93EC1BEC7 /* BookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */; };
+		EFAC6215CDDC8EC470880EAA /* ImageStateTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */; };
 		F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A3200728C61554EB8226051 /* CocoModel.swift */; };
 		FE8620E08954C0AC4BF6BA55 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3376543D524E01493327E56 /* RootView.swift */; };
 		FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */; };
@@ -77,6 +78,7 @@
 		1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModelTests.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
+		2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStateTrackerTests.swift; sourceTree = "<group>"; };
 		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
 		3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStoreTests.swift; sourceTree = "<group>"; };
 		3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteRegistry.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 				1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */,
 				BCC0A2F849C62996EA3982B6 /* Fixtures */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
+				2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */,
 				D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */,
 				C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */,
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
@@ -413,6 +416,7 @@
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
 				B80463566244F55B54F12F2A /* CocoModelTests.swift in Sources */,
 				8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */,
+				EFAC6215CDDC8EC470880EAA /* ImageStateTrackerTests.swift in Sources */,
 				5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */,
 				86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */,
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
