@@ -50,6 +50,16 @@ targets:
       - path: BJJAnnotateTests/Fixtures
         type: folder
         buildPhase: resources
+      # Bundle production source as a resource so grep gate tests can read it
+      # from inside the simulator sandbox (AC #24 / AC #29 enforcement).
+      - path: BJJAnnotate/Persistence
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Persistence
+      - path: BJJAnnotate/Domain
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Domain
     dependencies:
       - target: BJJAnnotate
     settings:

@@ -243,38 +243,46 @@ final class CocoFileCoordinatorUbiquityTests: XCTestCase {
 }
 
 /// Production CocoFileCoordinator must not contain `try?` (AC #29).
+///
+/// Reads the bundled production source files (added to BJJAnnotateTests resources
+/// via project.yml so the simulator sandbox can read them).
 final class ProductionSourceGrepTests: XCTestCase {
 
     func test_no_try_question_mark_in_CocoFileCoordinator_or_AnnotationStore() throws {
-        let root = Self.repoRoot()
-        let paths = [
-            "BJJAnnotate/Persistence/CocoFileCoordinator.swift",
-            "BJJAnnotate/Domain/AnnotationStore.swift",
-        ]
-        for relative in paths {
-            let url = root.appendingPathComponent(relative)
-            // The file may not exist yet during early commits.
-            guard FileManager.default.fileExists(atPath: url.path) else { continue }
-            let body = try String(contentsOf: url, encoding: .utf8)
-            // Strip comments (lines starting with `//` after optional leading whitespace).
-            let stripped = body.split(separator: "\n").filter { line in
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                return !trimmed.hasPrefix("//")
-            }.joined(separator: "\n")
+        let files = ["CocoFileCoordinator", "AnnotationStore"]
+        for name in files {
+            guard let body = Self.readBundledSource(named: name) else {
+                XCTFail("Could not locate bundled production source \(name).swift in test bundle")
+                continue
+            }
+            let stripped = Self.stripComments(body)
             XCTAssertFalse(
                 stripped.contains("try?"),
                 "Production source must not silently swallow errors via `try?`. " +
-                "Offender: \(relative). Use typed throws + AnnotationStore.lastError instead."
+                "Offender: \(name).swift. Use typed throws + AnnotationStore.lastError instead."
             )
         }
     }
 
-    private static func repoRoot() -> URL {
-        var url = URL(fileURLWithPath: #file)
-        while url.path != "/" && url.lastPathComponent != "bjj-annotate-ios" {
-            url.deleteLastPathComponent()
+    static func readBundledSource(named name: String) -> String? {
+        let bundle = Bundle(for: ProductionSourceGrepTests.self)
+        // The folder reference may flatten or preserve the subdirectory.
+        let candidates: [URL?] = [
+            bundle.url(forResource: name, withExtension: "swift"),
+            bundle.url(forResource: name, withExtension: "swift", subdirectory: "Persistence"),
+            bundle.url(forResource: name, withExtension: "swift", subdirectory: "Domain"),
+        ]
+        for case let url? in candidates {
+            return try? String(contentsOf: url, encoding: .utf8)
         }
-        return url
+        return nil
+    }
+
+    static func stripComments(_ body: String) -> String {
+        body.split(separator: "\n").filter { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            return !trimmed.hasPrefix("//")
+        }.joined(separator: "\n")
     }
 }
 
@@ -282,25 +290,13 @@ final class ProductionSourceGrepTests: XCTestCase {
 final class DebounceImplementationGrepTests: XCTestCase {
 
     func test_no_DispatchQueue_asyncAfter_in_CocoFileCoordinator() throws {
-        let root = Self.repoRoot()
-        let url = root.appendingPathComponent("BJJAnnotate/Persistence/CocoFileCoordinator.swift")
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        let body = try String(contentsOf: url, encoding: .utf8)
-        let stripped = body.split(separator: "\n").filter { line in
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            return !trimmed.hasPrefix("//")
-        }.joined(separator: "\n")
+        guard let body = ProductionSourceGrepTests.readBundledSource(named: "CocoFileCoordinator") else {
+            return XCTFail("Could not locate bundled CocoFileCoordinator.swift in test bundle")
+        }
+        let stripped = ProductionSourceGrepTests.stripComments(body)
         XCTAssertFalse(stripped.contains("DispatchQueue.global"))
         XCTAssertFalse(stripped.contains(".asyncAfter("),
                        "Debounce must use Task-cancellation, not DispatchQueue.asyncAfter (AC #24).")
-    }
-
-    private static func repoRoot() -> URL {
-        var url = URL(fileURLWithPath: #file)
-        while url.path != "/" && url.lastPathComponent != "bjj-annotate-ios" {
-            url.deleteLastPathComponent()
-        }
-        return url
     }
 }
 
