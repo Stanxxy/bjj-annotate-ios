@@ -44,6 +44,7 @@
 		B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */; };
 		B80463566244F55B54F12F2A /* CocoModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */; };
 		B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */; };
+		B8D75EA6D2811A4BD169301E /* CocoFileCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */; };
 		BC4EDE80FC6008DB7DBFC539 /* ProjectGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6195F0387F9674703C28B151 /* ProjectGridView.swift */; };
 		BD182DBBEF5B258283820EA0 /* FakeUbiquityResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC2B4142CEFD8B28C84A494 /* FakeUbiquityResolver.swift */; };
 		C60E8B9A3623754C2AE22E71 /* AthletePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF12FB9EDD2399642E2D515B /* AthletePalette.swift */; };
@@ -96,6 +97,7 @@
 		55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreTests.swift; sourceTree = "<group>"; };
 		5869831EB1FFDAC97621E4DD /* BJJAnnotateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BJJAnnotateApp.swift; sourceTree = "<group>"; };
 		5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkErrorRowUITests.swift; sourceTree = "<group>"; };
+		59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoFileCoordinatorTests.swift; sourceTree = "<group>"; };
 		6195F0387F9674703C28B151 /* ProjectGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridView.swift; sourceTree = "<group>"; };
 		6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreErrorSurfacingTests.swift; sourceTree = "<group>"; };
 		7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCacheTests.swift; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
+				59F0255122D76F7E008832A6 /* CocoFileCoordinatorTests.swift */,
 				1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */,
 				BCC0A2F849C62996EA3982B6 /* Fixtures */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
@@ -428,6 +431,7 @@
 				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
 				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
+				B8D75EA6D2811A4BD169301E /* CocoFileCoordinatorTests.swift in Sources */,
 				B80463566244F55B54F12F2A /* CocoModelTests.swift in Sources */,
 				BD182DBBEF5B258283820EA0 /* FakeUbiquityResolver.swift in Sources */,
 				8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */,
