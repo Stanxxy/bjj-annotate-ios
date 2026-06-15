@@ -13,6 +13,7 @@
 		0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */; };
 		1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */; };
 		21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */; };
+		222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */; };
 		30A0C4B344E8A6BB356F0AEA /* ProjectGridViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */; };
 		311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */; };
 		364AE88F8191C641174738D7 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */; };
@@ -21,6 +22,7 @@
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
 		7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */; };
 		81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */; };
+		86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */; };
 		8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */; };
 		8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */; };
 		96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */; };
@@ -58,6 +60,7 @@
 		17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
+		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
 		3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
 		3F001954543040B4DAB69887 /* BJJAnnotateTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BJJAnnotateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModelTests.swift; sourceTree = "<group>"; };
@@ -76,8 +79,9 @@
 		9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModel.swift; sourceTree = "<group>"; };
 		9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyGridUITests.swift; sourceTree = "<group>"; };
 		9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderTests.swift; sourceTree = "<group>"; };
-		A2E04776E5022074A20F06C2 /* BJJAnnotate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BJJAnnotate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2E04776E5022074A20F06C2 /* BJJAnnotate.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BJJAnnotate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulatedListNoBottomCTAUITests.swift; sourceTree = "<group>"; };
+		C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopyGrepTests.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
 		E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCell.swift; sourceTree = "<group>"; };
@@ -135,7 +139,9 @@
 				F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */,
 				55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
+				C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */,
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
+				31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */,
 				9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */,
 				90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */,
 				4755358F0159F3247B173A24 /* ProjectListViewModelTests.swift */,
@@ -341,7 +347,9 @@
 				21A1A635BE1FC1A679F49ABF /* BookmarkStoreStaleRefreshTests.swift in Sources */,
 				629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */,
 				8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */,
+				86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */,
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
+				222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */,
 				8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */,
 				D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */,
 				311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */,
@@ -500,7 +508,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = W3HB9XGYMC;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -525,7 +532,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = W3HB9XGYMC;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
