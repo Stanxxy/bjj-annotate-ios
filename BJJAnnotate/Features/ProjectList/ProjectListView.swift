@@ -6,7 +6,6 @@ import SwiftUI
 struct ProjectListView: View {
     @Bindable var viewModel: ProjectListViewModel
     @State private var pickerMode: PickerMode? = nil
-    @State private var lastError: String? = nil
     var onOpen: (ProjectListRow) -> Void = { _ in }
 
     enum PickerMode: Identifiable {
@@ -66,11 +65,10 @@ struct ProjectListView: View {
                 }
             )
         }
-        .alert("Couldn't open folder", isPresented: .constant(lastError != nil), actions: {
-            Button("OK") { lastError = nil }
-        }, message: {
-            Text(lastError ?? "")
-        })
+        // L-3 carry-forward: picker errors route through `viewModel.surfacePickerError`
+        // into `bookmarkStore.lastError` and surface via the same banner above.
+        // The legacy `.alert(...)` + `@State private var lastError` parallel state
+        // is intentionally removed — single source of truth.
         .task {
             await viewModel.refresh()
         }
@@ -228,18 +226,10 @@ struct ProjectListView: View {
                     try await viewModel.relocate(rowID: rowID, to: url)
                 }
             } catch {
-                lastError = (error as? BookmarkResolutionError).map(describe) ?? error.localizedDescription
+                // L-3 carry-forward: route into the same banner surface as
+                // decode/encode/stale-refresh errors. No second source of truth.
+                viewModel.surfacePickerError(error)
             }
-        }
-    }
-
-    private func describe(_ err: BookmarkResolutionError) -> String {
-        switch err {
-        case .unknownId: return "That project no longer exists."
-        case .notFound: return "That folder couldn't be found."
-        case .accessDenied: return "Couldn't access that folder. Try picking it again."
-        case .notADirectory: return "That isn't a folder."
-        case .foundation(let detail): return detail
         }
     }
 

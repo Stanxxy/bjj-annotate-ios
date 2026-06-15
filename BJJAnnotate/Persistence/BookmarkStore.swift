@@ -43,6 +43,12 @@ enum BookmarkStoreError: Error, Equatable {
     /// Stale-refresh path tried to re-mint a bookmark and failed. Original bookmark is
     /// preserved so the user can still navigate; the failure is logged and surfaced.
     case staleRefreshFailed(description: String)
+    /// File-picker flow (`UIDocumentPickerViewController`) returned an error or the
+    /// resolution of the picked URL failed (access denied, not a directory, etc.).
+    /// L-3 carry-forward: replaces the legacy `@State private var lastError` alert
+    /// on `ProjectListView` so picker faults share the same banner surface as
+    /// decode/encode/stale-refresh faults.
+    case pickerFailed(description: String)
 }
 
 /// Seam for `URL(resolvingBookmarkData:bookmarkDataIsStale:)` + `URL.bookmarkData(options:)`.

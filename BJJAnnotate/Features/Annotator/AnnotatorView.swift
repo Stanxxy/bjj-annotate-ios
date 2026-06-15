@@ -30,23 +30,10 @@ struct AnnotatorView: View {
     }
 
     private var imageBody: some View {
-        // T14 will replace this with AnnotatorCanvasView (zoom/pan/draw). For T13
-        // the skeleton renders the image as-is so navigation can be verified.
-        Group {
-            if let uiImage = UIImage(contentsOfFile: imageURL.path) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .accessibilityLabel(imageURL.lastPathComponent)
-                    .accessibilityIdentifier("Annotator.Image")
-            } else {
-                // File exists on disk but UIImage decode failed. Treat as missing
-                // for now — T14 will distinguish decode failure vs. missing.
-                missingImageBody
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
+        // T14: zoom/pan/double-tap surface. T15 will add the box-tool drag-stage on top.
+        AnnotatorCanvasView(imageURL: imageURL)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black)
     }
 
     private var missingImageBody: some View {
