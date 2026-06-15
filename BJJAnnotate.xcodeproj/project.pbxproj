@@ -47,7 +47,9 @@
 		7A9C2320038613BF095A369A /* AnnotatorCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */; };
 		7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */; };
 		81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */; };
+		861D8410826023F6B4F20D76 /* LifecycleFlushBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A1AF88DA29779112FC695A /* LifecycleFlushBridge.swift */; };
 		86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */; };
+		87B6615A334E04353705B4B4 /* LifecycleFlushBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3634B9722603E679A59FE061 /* LifecycleFlushBridgeTests.swift */; };
 		8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */; };
 		8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */; };
 		8D62820E405C7FFFA719D13C /* CocoFileCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794B4076A42F79055FFBE56D /* CocoFileCoordinator.swift */; };
@@ -123,6 +125,7 @@
 		2DAC16A3A7221EC79C2A6216 /* BoxHandleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxHandleTests.swift; sourceTree = "<group>"; };
 		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
 		35B48ADC20F6579A0C830129 /* ProductionSources_Persistence */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ProductionSources_Persistence; path = BJJAnnotate/Persistence; sourceTree = SOURCE_ROOT; };
+		3634B9722603E679A59FE061 /* LifecycleFlushBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleFlushBridgeTests.swift; sourceTree = "<group>"; };
 		3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStoreTests.swift; sourceTree = "<group>"; };
 		37592E5E1E503C1DB49E142B /* BoxHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxHandle.swift; sourceTree = "<group>"; };
 		3BC2B4142CEFD8B28C84A494 /* FakeUbiquityResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeUbiquityResolver.swift; sourceTree = "<group>"; };
@@ -144,6 +147,7 @@
 		62427B70A37CD0E88C9902F2 /* ProductionSources_Domain */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ProductionSources_Domain; path = BJJAnnotate/Domain; sourceTree = SOURCE_ROOT; };
 		6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreErrorSurfacingTests.swift; sourceTree = "<group>"; };
 		7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCacheTests.swift; sourceTree = "<group>"; };
+		72A1AF88DA29779112FC695A /* LifecycleFlushBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleFlushBridge.swift; sourceTree = "<group>"; };
 		767327C9556EE79353400DC2 /* ThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
 		794B4076A42F79055FFBE56D /* CocoFileCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoFileCoordinator.swift; sourceTree = "<group>"; };
 		7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPickerTests.swift; sourceTree = "<group>"; };
@@ -263,6 +267,7 @@
 				2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */,
 				99F99F137989683F40DC9F1B /* InstanceListModelTests.swift */,
 				D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */,
+				3634B9722603E679A59FE061 /* LifecycleFlushBridgeTests.swift */,
 				C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */,
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
 				31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */,
@@ -350,6 +355,7 @@
 				D1D910226AB7B74787989A8E /* ClassChipRow.swift */,
 				51E8BE5A7759518A9707ABB4 /* ConflictPresentation.swift */,
 				F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */,
+				72A1AF88DA29779112FC695A /* LifecycleFlushBridge.swift */,
 			);
 			path = Annotator;
 			sourceTree = "<group>";
@@ -524,6 +530,7 @@
 				105A4F6E640519EDBBDCF415 /* InstanceList.swift in Sources */,
 				51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */,
 				E2C0D926DB4B78681AC9F9CD /* Layout.swift in Sources */,
+				861D8410826023F6B4F20D76 /* LifecycleFlushBridge.swift in Sources */,
 				FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */,
 				0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */,
 				BC4EDE80FC6008DB7DBFC539 /* ProjectGridView.swift in Sources */,
@@ -564,6 +571,7 @@
 				EFAC6215CDDC8EC470880EAA /* ImageStateTrackerTests.swift in Sources */,
 				789DA253FA046C38C7B3786D /* InstanceListModelTests.swift in Sources */,
 				5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */,
+				87B6615A334E04353705B4B4 /* LifecycleFlushBridgeTests.swift in Sources */,
 				86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */,
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
 				222C1CEE7648158063082475 /* Phase1LockedCopyTests.swift in Sources */,
