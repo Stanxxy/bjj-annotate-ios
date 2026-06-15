@@ -12,6 +12,7 @@
 		08FD47B84A5BD588E0EE4ADB /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */; };
 		0D2A76240D4D61AB32A6D75A /* BJJAnnotateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5869831EB1FFDAC97621E4DD /* BJJAnnotateApp.swift */; };
 		0E4988FC2803479BFBDCD64C /* ProjectFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */; };
+		105A4F6E640519EDBBDCF415 /* InstanceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */; };
 		13B339F6FB82F246E63AD5C9 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = BCC0A2F849C62996EA3982B6 /* Fixtures */; };
 		1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */; };
 		15E0852D6E153292900B58A8 /* AnnotatorCanvasGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE6513949672E3B413C7EFF3 /* AnnotatorCanvasGeometryTests.swift */; };
@@ -40,6 +41,7 @@
 		6C7F2CEFF9CA5235F8C268AD /* ImageStateTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F53BD7FDD9279A2D5EAFF2 /* ImageStateTracker.swift */; };
 		6F49E1A00F8FB80900231C8E /* AthletePickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCC5D13C32CEEA3D7280E89 /* AthletePickerTests.swift */; };
 		709E9631975636AEA2AA84AC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25772D89C0B1290AF8411983 /* Assets.xcassets */; };
+		789DA253FA046C38C7B3786D /* InstanceListModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99F99F137989683F40DC9F1B /* InstanceListModelTests.swift */; };
 		7A9C2320038613BF095A369A /* AnnotatorCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */; };
 		7CFA4E8628D21A8784D722C3 /* SmokeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */; };
 		81FA8E299AF30B647D885D01 /* EmptyGridUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */; };
@@ -147,6 +149,7 @@
 		8A3200728C61554EB8226051 /* CocoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModel.swift; sourceTree = "<group>"; };
 		90AE3FE5D00F30B5079AD00B /* ProjectGridViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModelTests.swift; sourceTree = "<group>"; };
 		96ED64DBA2E3119ECBB86C99 /* UbiquityResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UbiquityResolver.swift; sourceTree = "<group>"; };
+		99F99F137989683F40DC9F1B /* InstanceListModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceListModelTests.swift; sourceTree = "<group>"; };
 		9A7A34A05088317D1852F322 /* ProjectGridViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGridViewModel.swift; sourceTree = "<group>"; };
 		9B509B4EA596F3FC812E7B7A /* EmptyGridUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyGridUITests.swift; sourceTree = "<group>"; };
 		9B7EFA1DEB9FF2DB2CE755B4 /* ProjectFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolderTests.swift; sourceTree = "<group>"; };
@@ -178,6 +181,7 @@
 		F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorCanvasView.swift; sourceTree = "<group>"; };
 		F2FB9B95FE2D48243C27F81B /* SmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeUITests.swift; sourceTree = "<group>"; };
 		F3376543D524E01493327E56 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceList.swift; sourceTree = "<group>"; };
 		F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoFileCoordinatorConflictTests.swift; sourceTree = "<group>"; };
 		F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreStaleRefreshTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -252,6 +256,7 @@
 				BCC0A2F849C62996EA3982B6 /* Fixtures */,
 				7BF4407861D120FA115C5F64 /* FolderPickerTests.swift */,
 				2A37FD5012F618375DF45692 /* ImageStateTrackerTests.swift */,
+				99F99F137989683F40DC9F1B /* InstanceListModelTests.swift */,
 				D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */,
 				C760F1C35CA719D6020FE9AE /* LockedCopyGrepTests.swift */,
 				8570F8698EA09A3918C75C5B /* LockedCopyTests.swift */,
@@ -338,6 +343,7 @@
 				B95943704F5939D130E70819 /* BoxDragStage.swift */,
 				00A82B09BDA08D3234AD314B /* CanvasTransform.swift */,
 				D1D910226AB7B74787989A8E /* ClassChipRow.swift */,
+				F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */,
 			);
 			path = Annotator;
 			sourceTree = "<group>";
@@ -508,6 +514,7 @@
 				D5971788E9997E6428345C05 /* ConflictSidecar.swift in Sources */,
 				B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */,
 				6C7F2CEFF9CA5235F8C268AD /* ImageStateTracker.swift in Sources */,
+				105A4F6E640519EDBBDCF415 /* InstanceList.swift in Sources */,
 				51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */,
 				E2C0D926DB4B78681AC9F9CD /* Layout.swift in Sources */,
 				FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */,
@@ -547,6 +554,7 @@
 				BD182DBBEF5B258283820EA0 /* FakeUbiquityResolver.swift in Sources */,
 				8A9C5513A6F6294D9531EFE8 /* FolderPickerTests.swift in Sources */,
 				EFAC6215CDDC8EC470880EAA /* ImageStateTrackerTests.swift in Sources */,
+				789DA253FA046C38C7B3786D /* InstanceListModelTests.swift in Sources */,
 				5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */,
 				86F281CDBA89F07E9A7C56FE /* LockedCopyGrepTests.swift in Sources */,
 				0125E3F11F97D726AD00E9F2 /* LockedCopyTests.swift in Sources */,
