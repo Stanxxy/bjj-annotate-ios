@@ -52,6 +52,38 @@ struct BJJAnnotateApp: App {
         if args.contains("--uitest-seed-missing-bookmark") {
             seedMissingBookmarkProject(into: store)
         }
+        if args.contains("--uitest-seed-annotator-ready") {
+            seedAnnotatorReadyProject(into: store)
+        }
+    }
+
+    /// T24 golden-path seed: creates a directory with one synthesized JPEG
+    /// and saves a bookmark. The XCUITest taps the row → grid → thumbnail →
+    /// annotator → draws a box → backgrounds the app → relaunches → reopens
+    /// → asserts the box came back from disk.
+    private static func seedAnnotatorReadyProject(into store: BookmarkStore) {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("uitest-annotator-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            // Synthesize a 100x100 white JPEG so the canvas has something to render.
+            let renderer = UIGraphicsImageRenderer(size: CGSize(width: 100, height: 100))
+            let img = renderer.image { ctx in
+                UIColor.white.setFill()
+                ctx.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
+            }
+            if let data = img.jpegData(compressionQuality: 0.8) {
+                try data.write(to: dir.appendingPathComponent("frame_0001.jpg"))
+            }
+            let bookmark = try dir.bookmarkData(
+                options: .minimalBookmark,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            _ = store.save(bookmark: bookmark)
+        } catch {
+            // Silent in test seed paths.
+        }
     }
 
     /// Creates a fresh, empty temp directory in the simulator's tmp area and saves a
