@@ -20,6 +20,7 @@
 		364AE88F8191C641174738D7 /* ProjectListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */; };
 		38E36C09ECDDA8ED73E9CF5B /* AthleteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */; };
 		3F33114896FDE6EF7F112591 /* PopulatedListNoBottomCTAUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1E8A00A63C94FCD940EE7A /* PopulatedListNoBottomCTAUITests.swift */; };
+		4405AA9CB7AA8C62B0E7E77B /* SilentScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B851A77102048ED318E9D00 /* SilentScheduler.swift */; };
 		4A812A238F8AE2208EDB8BB9 /* AthleteRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */; };
 		51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB4EA75497C48A21AD33473 /* JSONValue.swift */; };
 		5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */; };
@@ -33,6 +34,7 @@
 		96E8A22DA49FBC0654A3FC76 /* BookmarkErrorRowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880DF880696C4B33B15351E /* BookmarkErrorRowUITests.swift */; };
 		9C968F935137A673628FF18F /* TempDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A33EA1993E0357A341B8A /* TempDirectory.swift */; };
 		A3E1259A0CB42AE3378EC79F /* AthletePaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */; };
+		A514875F93448DF96D8B567A /* AnnotationStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */; };
 		A8A40445F027970D872F10A1 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767327C9556EE79353400DC2 /* ThumbnailCache.swift */; };
 		AABEA31A104F4F0D76FACCD0 /* ThumbnailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BD967620274DE7561FCD1F /* ThumbnailCell.swift */; };
 		B0882F1D54432A2F3551C227 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */; };
@@ -69,10 +71,12 @@
 		0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedCopy.swift; sourceTree = "<group>"; };
 		0DB4EA75497C48A21AD33473 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
 		17C3628F5256C34A50C2F98A /* ProjectListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewModel.swift; sourceTree = "<group>"; };
+		1B851A77102048ED318E9D00 /* SilentScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentScheduler.swift; sourceTree = "<group>"; };
 		1F6FA9FC16E372A48572C26F /* CocoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoModelTests.swift; sourceTree = "<group>"; };
 		25772D89C0B1290AF8411983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		292B1EEFB57C4496D6465B48 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
 		31295491334827C6F6D274EF /* Phase1LockedCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phase1LockedCopyTests.swift; sourceTree = "<group>"; };
+		3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStoreTests.swift; sourceTree = "<group>"; };
 		3BD6F621B2EAECA5BD8482DD /* AthleteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteRegistry.swift; sourceTree = "<group>"; };
 		3D21AD7ED490C962E8C5D995 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
 		3F001954543040B4DAB69887 /* BJJAnnotateTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BJJAnnotateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,6 +158,7 @@
 			isa = PBXGroup;
 			children = (
 				EF717120E3F27BB752771A7A /* Support */,
+				3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */,
 				0246FEA6D9ACB95C3A6A52D5 /* AthletePaletteTests.swift */,
 				CFA686217411B1EF46C7BDA8 /* AthleteRegistryTests.swift */,
 				6C8B1F58245B1D32F253F3DF /* BookmarkStoreErrorSurfacingTests.swift */,
@@ -239,6 +244,7 @@
 		EF717120E3F27BB752771A7A /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				1B851A77102048ED318E9D00 /* SilentScheduler.swift */,
 				7E1A33EA1993E0357A341B8A /* TempDirectory.swift */,
 			);
 			path = Support;
@@ -391,6 +397,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A514875F93448DF96D8B567A /* AnnotationStoreTests.swift in Sources */,
 				A3E1259A0CB42AE3378EC79F /* AthletePaletteTests.swift in Sources */,
 				4A812A238F8AE2208EDB8BB9 /* AthleteRegistryTests.swift in Sources */,
 				B838DC0A0B4E1B87B028C72F /* BookmarkStoreErrorSurfacingTests.swift in Sources */,
@@ -405,6 +412,7 @@
 				8D2F509092BE0AFC5109DBB2 /* ProjectFolderTests.swift in Sources */,
 				D0CF3997836D1BCC5A1F9CEB /* ProjectGridViewModelTests.swift in Sources */,
 				311FAD24074CFD95D7FEF7C2 /* ProjectListViewModelTests.swift in Sources */,
+				4405AA9CB7AA8C62B0E7E77B /* SilentScheduler.swift in Sources */,
 				9C968F935137A673628FF18F /* TempDirectory.swift in Sources */,
 				1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */,
 			);
