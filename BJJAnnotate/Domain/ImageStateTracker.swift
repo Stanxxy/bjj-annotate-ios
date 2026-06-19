@@ -30,6 +30,25 @@ final class ImageStateTracker {
         applyImageState { $0.flagged = on }
     }
 
+    /// Static variant: toggles the `flagged` field for `imageId` in the given
+    /// `CocoDocument`. Mutates in-place. Used by `AnnotatorView` where the store
+    /// reference is accessed via the lifecycle context and the caller drives
+    /// scheduling directly (Marker C: mutations are sync; the view drives the
+    /// single coco-setter write and the coordinator scheduleWrite call).
+    static func toggleFlag(in coco: inout CocoDocument, imageId: Int) {
+        guard coco.bjj_annotate_meta != nil else { return }
+        if let idx = coco.bjj_annotate_meta!.image_states.firstIndex(where: { $0.image_id == imageId }) {
+            coco.bjj_annotate_meta!.image_states[idx].flagged.toggle()
+        } else {
+            let fresh = ImageState(
+                image_id: imageId,
+                visited_at: nowISO8601(),
+                flagged: true
+            )
+            coco.bjj_annotate_meta!.image_states.append(fresh)
+        }
+    }
+
     // MARK: - Private
 
     private func applyImageState(_ mutate: (inout ImageState) -> Void) {
@@ -47,7 +66,7 @@ final class ImageStateTracker {
         store.coco = next
     }
 
-    private static func nowISO8601() -> String {
+    static func nowISO8601() -> String {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f.string(from: Date())

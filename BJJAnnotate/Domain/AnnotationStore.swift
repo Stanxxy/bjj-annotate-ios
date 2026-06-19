@@ -196,6 +196,17 @@ final class AnnotationStore {
         return allocated.id
     }
 
+    /// PM Addendum #2 (flag toggle): toggles the `flagged` state for the current
+    /// `imageId` in `bjj_annotate_meta.image_states`. Creates the entry if absent.
+    /// Follows the same single-setter pattern as all other mutations (AC #4).
+    func toggleFlag() {
+        var next = coco
+        ImageStateTracker.toggleFlag(in: &next, imageId: imageId)
+        // MARK: Undo registration site (Phase 4 hook)
+        coco = next
+        scheduler.scheduleWrite(coco)
+    }
+
     /// AC #13 + Marker B: removes the box, KEEPS the athlete entry in the
     /// `bjj_annotate_meta.athletes` dictionary (never reused but never compacted).
     func deleteInstance(instanceId: Int) {

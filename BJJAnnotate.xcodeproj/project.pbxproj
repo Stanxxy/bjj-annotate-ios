@@ -92,6 +92,11 @@
 		F94BE4EEB36F518F0C047975 /* CocoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A3200728C61554EB8226051 /* CocoModel.swift */; };
 		FE8620E08954C0AC4BF6BA55 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3376543D524E01493327E56 /* RootView.swift */; };
 		FF8F25E3315A458F07B6B18F /* LockedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6F74C72583D2C38EEF40B0 /* LockedCopy.swift */; };
+		B71F73E6AF414623BC034629 /* AnnotatorLifecycleContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A862D5ADE024A0EAECB4738 /* AnnotatorLifecycleContext.swift */; };
+		BCE7F0E8CF804C2F9A204293 /* ProjectAnnotationConflictWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C22087159C454A9A1FF42D /* ProjectAnnotationConflictWatcher.swift */; };
+		BDDC7249E2564A4B8FD0BB28 /* AnnotatorViewLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28567F029BA3408F9D19381E /* AnnotatorViewLifecycleTests.swift */; };
+		1FE2986A90F142ABB6A1B957 /* ProjectLevelConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAE03B13EF14C0DA01D9539 /* ProjectLevelConflictTests.swift */; };
+		5B84279DD25B41ECAC5E1AB5 /* GoldenPathDiskRoundtripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D46ADF42684D4A0CAE5945E9 /* GoldenPathDiskRoundtripTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -200,6 +205,11 @@
 		F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceList.swift; sourceTree = "<group>"; };
 		F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoFileCoordinatorConflictTests.swift; sourceTree = "<group>"; };
 		F8E9FDD0CB7B1EC456356AD3 /* BookmarkStoreStaleRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStoreStaleRefreshTests.swift; sourceTree = "<group>"; };
+		4A862D5ADE024A0EAECB4738 /* AnnotatorLifecycleContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorLifecycleContext.swift; sourceTree = "<group>"; };
+		E6C22087159C454A9A1FF42D /* ProjectAnnotationConflictWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectAnnotationConflictWatcher.swift; sourceTree = "<group>"; };
+		28567F029BA3408F9D19381E /* AnnotatorViewLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotatorViewLifecycleTests.swift; sourceTree = "<group>"; };
+		7BAE03B13EF14C0DA01D9539 /* ProjectLevelConflictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLevelConflictTests.swift; sourceTree = "<group>"; };
+		D46ADF42684D4A0CAE5945E9 /* GoldenPathDiskRoundtripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenPathDiskRoundtripTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -290,6 +300,9 @@
 				7183F5F8A4B34D9455657FD1 /* ThumbnailCacheTests.swift */,
 				1D23F41A9844AB4F9AAB2633 /* UbiquityResolverFakeTests.swift */,
 				AB6A8C0CAAF14067283DA0A9 /* UIDeviceUserInterfaceIdiomBanTests.swift */,
+				28567F029BA3408F9D19381E /* AnnotatorViewLifecycleTests.swift */,
+				7BAE03B13EF14C0DA01D9539 /* ProjectLevelConflictTests.swift */,
+				D46ADF42684D4A0CAE5945E9 /* GoldenPathDiskRoundtripTests.swift */,
 			);
 			path = BJJAnnotateTests;
 			sourceTree = "<group>";
@@ -356,6 +369,7 @@
 		D9DE7E777EA8FA182DAFE6FF /* Annotator */ = {
 			isa = PBXGroup;
 			children = (
+				4A862D5ADE024A0EAECB4738 /* AnnotatorLifecycleContext.swift */,
 				F232E479F69072B5D55EEC1B /* AnnotatorCanvasView.swift */,
 				2E127E4C67078CFCDDA98C22 /* AnnotatorImagePresence.swift */,
 				12814ABA1DD95ED16B27B0F6 /* AnnotatorView.swift */,
@@ -366,6 +380,7 @@
 				51E8BE5A7759518A9707ABB4 /* ConflictPresentation.swift */,
 				F3D9282A7DC93CA4F49AAF6E /* InstanceList.swift */,
 				72A1AF88DA29779112FC695A /* LifecycleFlushBridge.swift */,
+				E6C22087159C454A9A1FF42D /* ProjectAnnotationConflictWatcher.swift */,
 			);
 			path = Annotator;
 			sourceTree = "<group>";
@@ -554,6 +569,8 @@
 				A8A40445F027970D872F10A1 /* ThumbnailCache.swift in Sources */,
 				AABEA31A104F4F0D76FACCD0 /* ThumbnailCell.swift in Sources */,
 				8DBD988D35D4169369EA30F9 /* UbiquityResolver.swift in Sources */,
+				B71F73E6AF414623BC034629 /* AnnotatorLifecycleContext.swift in Sources */,
+				BCE7F0E8CF804C2F9A204293 /* ProjectAnnotationConflictWatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -601,6 +618,9 @@
 				1448F18D396289ADDBCD8D89 /* ThumbnailCacheTests.swift in Sources */,
 				37AD0F68EB3648B5CA206A6B /* UIDeviceUserInterfaceIdiomBanTests.swift in Sources */,
 				F8AE7106F5B8AD7C0AC5EFD6 /* UbiquityResolverFakeTests.swift in Sources */,
+				BDDC7249E2564A4B8FD0BB28 /* AnnotatorViewLifecycleTests.swift in Sources */,
+				1FE2986A90F142ABB6A1B957 /* ProjectLevelConflictTests.swift in Sources */,
+				5B84279DD25B41ECAC5E1AB5 /* GoldenPathDiskRoundtripTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

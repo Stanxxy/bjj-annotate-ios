@@ -29,6 +29,11 @@ final class ProjectGridViewModel {
     /// state). Never derived via `try?` from a SwiftUI body.
     private(set) var displayName: String = "Project"
 
+    /// Resolved folder URL. Set during `load()` after a successful bookmark resolution.
+    /// Used by `ProjectGridView.onOpen` callback to pass the folder URL to `AnnotatorView`
+    /// for the per-project `AnnotationStore` lifecycle (I2 integration).
+    private(set) var folderURL: URL? = nil
+
     init(bookmarkStore: BookmarkStore, bookmarkID: String) {
         self.bookmarkStore = bookmarkStore
         self.bookmarkID = bookmarkID
@@ -38,8 +43,9 @@ final class ProjectGridViewModel {
         state = .loading
         do {
             let url = try bookmarkStore.resolve(id: bookmarkID)
-            // Resolved successfully — refresh displayName from the live URL.
+            // Resolved successfully — refresh displayName and folderURL from the live URL.
             displayName = url.lastPathComponent
+            folderURL = url
 
             guard url.startAccessingSecurityScopedResource() else {
                 state = .error("Couldn't access that folder.")

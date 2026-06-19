@@ -5,36 +5,61 @@ import XCTest
 ///
 /// XCUI testing requires xcodebuild + simulator; this file asserts the navigation
 /// destination contract at the model layer:
-///   - `RootView.NavigationDestination` exposes an `.annotator(bookmarkID:,imageURL:)`
+///   - `RootView.NavigationDestination` exposes an `.annotator(bookmarkID:imageURL:folderURL:)`
 ///     case (Hashable + Equatable so NavigationStack identifies pushes correctly).
 ///   - The destination preserves the imageURL as the file's last-path-component
 ///     identifier, so a re-entry after image deletion can detect the zero-image
 ///     state (AC #39).
+///   - The `folderURL` is the project folder so AnnotatorView can own the per-project
+///     lifecycle (I1 integration).
 ///
 /// The visible UI assertion lives in the matching XCUI test landing in T13/T22.
 final class AnnotatorNavigationContractTests: XCTestCase {
 
-    func test_annotator_destination_case_exists_with_bookmarkID_and_imageURL() {
-        let url = URL(fileURLWithPath: "/tmp/frame_0001.jpg")
-        let dest = RootView.NavigationDestination.annotator(bookmarkID: "bookmark-1", imageURL: url)
+    func test_annotator_destination_case_exists_with_bookmarkID_imageURL_and_folderURL() {
+        let folder = URL(fileURLWithPath: "/tmp/project/")
+        let url = URL(fileURLWithPath: "/tmp/project/frame_0001.jpg")
+        let dest = RootView.NavigationDestination.annotator(
+            bookmarkID: "bookmark-1",
+            imageURL: url,
+            folderURL: folder
+        )
         // Equality + hashability: NavigationStack relies on Hashable conformance.
-        let same = RootView.NavigationDestination.annotator(bookmarkID: "bookmark-1", imageURL: url)
+        let same = RootView.NavigationDestination.annotator(
+            bookmarkID: "bookmark-1",
+            imageURL: url,
+            folderURL: folder
+        )
         XCTAssertEqual(dest, same)
         XCTAssertEqual(dest.hashValue, same.hashValue)
     }
 
     func test_annotator_destination_distinguishes_different_image_urls() {
-        let a = URL(fileURLWithPath: "/tmp/frame_0001.jpg")
-        let b = URL(fileURLWithPath: "/tmp/frame_0002.jpg")
-        let destA = RootView.NavigationDestination.annotator(bookmarkID: "bookmark-1", imageURL: a)
-        let destB = RootView.NavigationDestination.annotator(bookmarkID: "bookmark-1", imageURL: b)
+        let folder = URL(fileURLWithPath: "/tmp/project/")
+        let a = URL(fileURLWithPath: "/tmp/project/frame_0001.jpg")
+        let b = URL(fileURLWithPath: "/tmp/project/frame_0002.jpg")
+        let destA = RootView.NavigationDestination.annotator(
+            bookmarkID: "bookmark-1",
+            imageURL: a,
+            folderURL: folder
+        )
+        let destB = RootView.NavigationDestination.annotator(
+            bookmarkID: "bookmark-1",
+            imageURL: b,
+            folderURL: folder
+        )
         XCTAssertNotEqual(destA, destB)
     }
 
     func test_annotator_destination_distinguishes_grid_from_annotator() {
-        let url = URL(fileURLWithPath: "/tmp/frame.jpg")
+        let folder = URL(fileURLWithPath: "/tmp/project/")
+        let url = URL(fileURLWithPath: "/tmp/project/frame.jpg")
         let grid = RootView.NavigationDestination.grid(bookmarkID: "bookmark-1")
-        let annotator = RootView.NavigationDestination.annotator(bookmarkID: "bookmark-1", imageURL: url)
+        let annotator = RootView.NavigationDestination.annotator(
+            bookmarkID: "bookmark-1",
+            imageURL: url,
+            folderURL: folder
+        )
         XCTAssertNotEqual(grid, annotator)
     }
 }

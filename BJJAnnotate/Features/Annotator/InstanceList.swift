@@ -47,6 +47,7 @@ struct InstanceList: View {
     @State var model: InstanceListModel
     let selectedInstanceId: Int?
     let onSelect: (Int) -> Void
+    var onDelete: ((Int) -> Void)? = nil
 
     var body: some View {
         Layout.AdaptiveAnchor(
@@ -107,6 +108,16 @@ struct InstanceList: View {
                         .accessibilityIdentifier("Annotator.InstanceList.Row.\(row.instanceId)")
                         .accessibilityLabel(row.label)
                         .accessibilityHint("Selects this box on the canvas.")
+                        .swipeActions(edge: .trailing) {
+                            if let del = onDelete {
+                                Button(role: .destructive) {
+                                    del(row.instanceId)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .accessibilityIdentifier("Annotator.InstanceList.Row.\(row.instanceId).Delete")
+                            }
+                        }
                     }
                 }
                 .listStyle(.plain)
