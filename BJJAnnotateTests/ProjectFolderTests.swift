@@ -15,6 +15,11 @@ final class ProjectFolderTests: XCTestCase {
         super.tearDown()
     }
 
+    // Shared fake resolver: isUbiquitousResult = false (default) means every file
+    // is treated as already-local — applyUbiquityGate fast-paths and no real iCloud
+    // daemon call is ever made.
+    private func makeFake() -> FakeUbiquityResolver { FakeUbiquityResolver() }
+
     func test_scans_jpg_png_heic_sorted_case_insensitive_excludes_others() throws {
         try temp.makeFile(named: "b.jpg")
         try temp.makeFile(named: "a.png")
@@ -24,7 +29,7 @@ final class ProjectFolderTests: XCTestCase {
         try temp.makeFile(named: "annotations.json")
 
         let folder = ProjectFolder(url: temp.url)
-        let names = try folder.scanImages().map(\.lastPathComponent)
+        let names = try folder.scanImages(ubiquity: makeFake(), perFileTimeout: 0.1).map(\.lastPathComponent)
 
         XCTAssertEqual(names, ["a.png", "b.jpg", "c.HEIC", "d.jpeg"])
     }
@@ -35,7 +40,7 @@ final class ProjectFolderTests: XCTestCase {
                                         contents: Data([0x00]))
         try temp.makeFile(named: "top.jpg")
 
-        let names = try ProjectFolder(url: temp.url).scanImages().map(\.lastPathComponent)
+        let names = try ProjectFolder(url: temp.url).scanImages(ubiquity: makeFake(), perFileTimeout: 0.1).map(\.lastPathComponent)
 
         XCTAssertEqual(names, ["top.jpg"], "nested image should not appear; subdirectories not recursed")
     }
@@ -47,7 +52,7 @@ final class ProjectFolderTests: XCTestCase {
         try temp.makeSubdirectory(named: "yolo26-pose.mlpackage")
         try temp.makeFile(named: "real.jpg")
 
-        let names = try ProjectFolder(url: temp.url).scanImages().map(\.lastPathComponent)
+        let names = try ProjectFolder(url: temp.url).scanImages(ubiquity: makeFake(), perFileTimeout: 0.1).map(\.lastPathComponent)
 
         XCTAssertEqual(names, ["real.jpg"])
     }
@@ -56,17 +61,17 @@ final class ProjectFolderTests: XCTestCase {
         try temp.makeFile(named: ".DS_Store")
         try temp.makeFile(named: "visible.jpg")
 
-        let names = try ProjectFolder(url: temp.url).scanImages().map(\.lastPathComponent)
+        let names = try ProjectFolder(url: temp.url).scanImages(ubiquity: makeFake(), perFileTimeout: 0.1).map(\.lastPathComponent)
 
         XCTAssertEqual(names, ["visible.jpg"])
     }
 
     func test_empty_folder_returns_empty_array() throws {
-        XCTAssertEqual(try ProjectFolder(url: temp.url).scanImages(), [])
+        XCTAssertEqual(try ProjectFolder(url: temp.url).scanImages(ubiquity: makeFake(), perFileTimeout: 0.1), [])
     }
 
     func test_throws_when_folder_does_not_exist() throws {
         let missing = temp.url.appendingPathComponent("does-not-exist")
-        XCTAssertThrowsError(try ProjectFolder(url: missing).scanImages())
+        XCTAssertThrowsError(try ProjectFolder(url: missing).scanImages(ubiquity: makeFake(), perFileTimeout: 0.1))
     }
 }
