@@ -103,7 +103,7 @@ final class ConflictWireEndToEndTests: XCTestCase {
         seedVersion.isConflict = true
         seedVersion.isResolved = false
 
-        // 3. Create the coordinator + store, then schedule a write of the "winner" doc.
+        // 3. Create the coordinator + store, then wire the conflict handler.
         let winnerDoc = makeDoc(annotationId: 200)
         let coordinator = CocoFileCoordinator(
             url: annotationsURL,
@@ -118,9 +118,19 @@ final class ConflictWireEndToEndTests: XCTestCase {
             scheduler: adapter
         )
 
+        // Wire the conflict handler exactly as AnnotatorLifecycleContext.make() does.
+        // This is the B2 production path under test.
+        await coordinator.setConflictHandler { [store] event in
+            Task { @MainActor in
+                store.lastConflict = event
+            }
+        }
+
         // 4. Drive the write path end-to-end (bypasses debounce via flushNow).
         await coordinator.scheduleWrite(winnerDoc)
         await coordinator.flushNow()
+        // Allow the @MainActor Task hop to complete.
+        await Task.yield()
 
         // 5. Assert (a): a sidecar file exists on disk.
         let dirContents = try FileManager.default.contentsOfDirectory(

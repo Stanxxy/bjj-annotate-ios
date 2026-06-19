@@ -24,6 +24,18 @@ protocol WriteScheduling: AnyObject {
     func scheduleWrite(_ payload: CocoDocument)
 }
 
+/// Write scheduler that drops all payloads. Used by `AnnotatorLifecycleContext.make()`
+/// when a decode/read failure prevents the existing `annotations.json` from loading:
+/// handing back a writable scheduler pointing at the live corrupt file would let the
+/// first mutation overwrite the user's data (M2 defect). `NullWriteScheduler` ensures
+/// the error-state store is strictly read-only — no mutation reaches disk.
+final class NullWriteScheduler: WriteScheduling {
+    func scheduleWrite(_ payload: CocoDocument) {
+        // Intentionally empty: all writes are dropped.
+        // The store's lastError is set by the caller; the UI presents a banner.
+    }
+}
+
 /// `@Observable` single-source-of-truth for annotation state.
 ///
 /// AC #5: `store.coco` IS what is written to disk. No second representation.

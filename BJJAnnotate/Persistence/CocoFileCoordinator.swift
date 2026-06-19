@@ -43,6 +43,13 @@ actor CocoFileCoordinator {
 
     enum WriteState { case idle, pending, writing }
 
+    /// B2 fix: optional callback invoked (on a detached Task) after a real
+    /// `NSFileVersion` conflict is detected and the sidecar has been emitted.
+    /// The callback runs the `ConflictEvent` to the caller (AnnotatorLifecycleContext)
+    /// which bridges it to `AnnotationStore.lastConflict` on the MainActor.
+    /// Set by `AnnotatorLifecycleContext.make()` after construction.
+    var onConflictDetected: (@Sendable (ConflictEvent) -> Void)?
+
     init(
         url: URL,
         ubiquity: any UbiquityResolver,
@@ -55,6 +62,14 @@ actor CocoFileCoordinator {
         self.ubiquityTimeout = ubiquityTimeout
         self.debounceNanos = debounceNanos
         self.logger = logger
+    }
+
+    // MARK: - Conflict handler wiring
+
+    /// Sets the conflict callback from outside the actor (requires `await`).
+    /// Called by `AnnotatorLifecycleContext.make()` after the store is ready.
+    func setConflictHandler(_ handler: @escaping @Sendable (ConflictEvent) -> Void) {
+        self.onConflictDetected = handler
     }
 
     // MARK: - Read
@@ -126,6 +141,12 @@ actor CocoFileCoordinator {
     }
 
     private func persist(_ payload: CocoDocument) async {
+        // B2 fix: probe for NSFileVersion conflicts BEFORE overwriting.
+        // If conflicts exist: preserve the loser(s) as sidecar(s), keep the
+        // most-recent version as the new active content, mark conflicts resolved.
+        // AC #34: no data silently discarded.
+        await resolveConflictsIfNeeded(winnerPayload: payload)
+
         // Materialize the existing file (if any) before overwriting on iCloud.
         do {
             try await materializeIfNeeded()
@@ -189,6 +210,94 @@ actor CocoFileCoordinator {
         }
         if let writeError = writeError {
             logger.error("Write error: \(writeError.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// B2: Probes `NSFileVersion.unresolvedConflictVersions(of:)`. If conflicts exist:
+    /// - Reads the loser's bytes from its version URL.
+    /// - Emits a `annotations.conflict-<ISO8601>.json` sidecar via `ConflictSidecar.emit`.
+    /// - Marks the version as resolved so iCloud stops surfacing it.
+    /// - Fires `onConflictDetected` with the `ConflictEvent` so the UI can banner.
+    ///
+    /// The "winner" is the `winnerPayload` in-memory document (the last persisted
+    /// state from the current device). The loser is the remote iCloud version.
+    /// AC #34: no loser data silently discarded.
+    /// AC #36: athlete dictionaries are NEVER merged — the sidecar preserves the loser verbatim.
+    private func resolveConflictsIfNeeded(winnerPayload: CocoDocument) async {
+        guard let conflicts = NSFileVersion.unresolvedConflictVersions(of: url),
+              !conflicts.isEmpty else {
+            return
+        }
+        logger.info("CocoFileCoordinator: \(conflicts.count, privacy: .public) unresolved NSFileVersion conflict(s) detected for \(self.url.lastPathComponent, privacy: .public)")
+
+        let directory = url.deletingLastPathComponent()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+
+        for version in conflicts {
+            guard let versionURL = version.url else {
+                logger.warning("Conflict version has nil url — skipping.")
+                version.isResolved = true
+                continue
+            }
+            // Read the loser's bytes.
+            let loserBytes: Data
+            do {
+                loserBytes = try Data(contentsOf: versionURL)
+            } catch {
+                logger.error("Failed to read conflict version bytes: \(error.localizedDescription, privacy: .public)")
+                version.isResolved = true
+                continue
+            }
+
+            // Decode loser to compute differing annotation ids.
+            // If loser is undecodable (extremely corrupt), differingIds is empty;
+            // the sidecar is still emitted so the bytes are preserved on disk.
+            let differingIds: [Int]
+            do {
+                let loserDoc = try JSONDecoder().decode(CocoDocument.self, from: loserBytes)
+                differingIds = ConflictSidecar.differingAnnotationIds(winner: winnerPayload, loser: loserDoc)
+            } catch {
+                logger.warning("Conflict loser document could not be decoded for diff — sidecar emitted without diff ids: \(error.localizedDescription, privacy: .public)")
+                differingIds = []
+            }
+
+            // Emit sidecar — preserves loser verbatim, AC #34 + #36.
+            let modDate = version.modificationDate ?? Date()
+            let event: ConflictEvent
+            do {
+                event = try ConflictSidecar.emit(
+                    directory: directory,
+                    losersBytes: loserBytes,
+                    loserModificationDate: modDate,
+                    winnerURL: url,
+                    differingAnnotationIds: differingIds
+                )
+            } catch {
+                logger.error("ConflictSidecar.emit failed: \(error.localizedDescription, privacy: .public)")
+                version.isResolved = true
+                continue
+            }
+
+            // Mark resolved so iCloud stops surfacing this version.
+            version.isResolved = true
+
+            // Notify the UI (store.lastConflict) via the injected callback.
+            if let handler = onConflictDetected {
+                handler(event)
+            }
+            logger.info("ConflictSidecar emitted: \(event.sidecarURL.lastPathComponent, privacy: .public)")
+        }
+        // Remove all old versions after resolution to keep the version history clean.
+        // removeOtherVersions is best-effort; failure is non-fatal (iCloud may retry).
+        let capturedURL = url
+        let capturedLogger = logger
+        Task {
+            NSFileVersion.removeOtherVersions(of: capturedURL) { error in
+                if let error = error {
+                    capturedLogger.warning("removeOtherVersions failed (non-fatal): \(error.localizedDescription, privacy: .public)")
+                }
+            }
         }
     }
 

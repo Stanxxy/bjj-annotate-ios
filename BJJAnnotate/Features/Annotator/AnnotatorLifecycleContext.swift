@@ -1,6 +1,17 @@
 import Foundation
 import os
 
+/// Errors thrown by `AnnotatorLifecycleContext` factory and helpers.
+enum AnnotatorLifecycleError: Error, Equatable {
+    /// The image URL could not be located in the sorted folder scan.
+    /// Returning a default id (e.g. 1) would scope annotations to the wrong image — forbidden.
+    case imageNotFoundInFolder(imageURL: URL, folderURL: URL)
+    /// The folder scan itself failed.
+    case folderScanFailed(description: String)
+    /// The existing annotations.json could not be decoded; the file is preserved unchanged.
+    case decodeFailed(description: String)
+}
+
 /// Per-project annotation lifecycle context. Created when `AnnotatorView` appears
 /// and torn down when the view disappears.
 ///
@@ -51,25 +62,37 @@ struct AnnotatorLifecycleContext {
     }
 
     /// Derives the 1-based imageId for the given imageURL within the folder.
-    /// Returns 1 if the image is not found in the scan (defensive; should not
-    /// happen in normal use — the grid only passes URLs it received from the same scan).
+    ///
+    /// Throws `AnnotatorLifecycleError.folderScanFailed` if the folder cannot be scanned.
+    /// Throws `AnnotatorLifecycleError.imageNotFoundInFolder` if the image is absent from
+    /// the sorted scan — returning a default (e.g. `1`) is FORBIDDEN because it would scope
+    /// annotations to a DIFFERENT image's id (cross-contamination, M3 defect).
+    ///
+    /// The caller (`make(...)`) propagates this as a thrown error so the annotator never
+    /// opens with a silently incorrect imageId.
     static func imageId(
         for imageURL: URL,
         in folderURL: URL,
         ubiquity: any UbiquityResolver = SystemUbiquityResolver()
     ) throws -> Int {
         let folder = ProjectFolder(url: folderURL)
-        let images = try folder.scanImages(ubiquity: ubiquity)
+        let images: [URL]
+        do {
+            images = try folder.scanImages(ubiquity: ubiquity)
+        } catch {
+            throw AnnotatorLifecycleError.folderScanFailed(description: error.localizedDescription)
+        }
         if let idx = images.firstIndex(of: imageURL) {
             return idx + 1  // 1-based
         }
-        // Fallback: the image may have been passed with a slightly different URL
-        // (e.g. symlink vs resolved path). Try last-path-component match.
+        // Try last-path-component match to handle symlink vs resolved path differences.
         let imageName = imageURL.lastPathComponent
         if let idx = images.firstIndex(where: { $0.lastPathComponent == imageName }) {
             return idx + 1
         }
-        return 1
+        // Image not found in the sorted scan: throw rather than default to 1.
+        // Defaulting to 1 would silently annotate the wrong image (M3 defect — FORBIDDEN).
+        throw AnnotatorLifecycleError.imageNotFoundInFolder(imageURL: imageURL, folderURL: folderURL)
     }
 
     // MARK: - Factory
@@ -82,8 +105,11 @@ struct AnnotatorLifecycleContext {
     ///   - ubiquity: iCloud resolver (injectable for tests; production uses `SystemUbiquityResolver`).
     ///   - debounceNanos: debounce interval for the write scheduler. Tests pass a shorter value.
     /// - Returns: a fully initialized context with `store` loaded from disk (or bootstrapped).
-    /// - Throws: `CocoFileCoordinatorError` on decode failure (not on missing file — first open
-    ///           with no `annotations.json` returns an empty bootstrap document).
+    /// - Throws: `AnnotatorLifecycleError.imageNotFoundInFolder` / `.folderScanFailed` if the
+    ///           imageId cannot be determined (M3 fix: no silent default to 1).
+    ///           First-open (no `annotations.json`) returns an empty bootstrap and does not throw.
+    ///           Decode failure returns a READ-ONLY error-state store (M2 fix: no writable bootstrap
+    ///           on top of the corrupt live file).
     static func make(
         folderURL: URL,
         imageURL: URL,
@@ -100,13 +126,10 @@ struct AnnotatorLifecycleContext {
         )
 
         // Derive imageId synchronously (ProjectFolder.scanImages is sync).
-        let imgId: Int
-        do {
-            imgId = try imageId(for: imageURL, in: folderURL, ubiquity: ubiquity)
-        } catch {
-            logger.warning("Failed to scan folder for imageId — defaulting to 1: \(error.localizedDescription, privacy: .public)")
-            imgId = 1
-        }
+        // M3 fix: imageId(for:in:) now throws on scan-failure or not-found.
+        // We propagate the error — no silent default to 1, which would cross-contaminate
+        // annotations onto a different image's id.
+        let imgId = try imageId(for: imageURL, in: folderURL, ubiquity: ubiquity)
 
         // Try to read the existing annotations.json.
         let adapter = CocoWriteSchedulingAdapter(coordinator: coordinator)
@@ -117,10 +140,15 @@ struct AnnotatorLifecycleContext {
                 let doc = try await coordinator.readDocument()
                 store = AnnotationStore(initial: doc, imageId: imgId, scheduler: adapter)
             } catch {
-                // Decode failure: surface via lastError but fall back to bootstrap so the
-                // user can still annotate (they will see the banner). This is the only
-                // "fallback" in Phase 1 and is explicitly allowed: the store is not a
-                // SECOND source of truth — the old file still exists on disk unchanged.
+                // M2 fix: decode / read failure must NOT hand back a writable bootstrap
+                // pointed at the LIVE annotations.json. The writable adapter would let the
+                // first mutation overwrite the user's real (un-decodable) annotations with
+                // an empty bootstrap — a data-loss path.
+                //
+                // Instead: return a store backed by a NullWriteScheduler so NO mutations
+                // reach disk. The lastError banner will show; the user must navigate back
+                // and resolve the corrupt file externally (Files.app, iCloud restore, etc.)
+                // before annotating. The corrupt file is preserved unchanged on disk.
                 let storeError: AnnotationStoreError
                 if let ce = error as? CocoFileCoordinatorError {
                     switch ce {
@@ -132,14 +160,29 @@ struct AnnotatorLifecycleContext {
                 } else {
                     storeError = .readFailed(description: error.localizedDescription)
                 }
+                logger.error("AnnotatorLifecycleContext: read/decode failure — opening read-only error state. Error: \(String(describing: error), privacy: .public)")
+                // Bootstrap document is shown in-memory only (no disk interaction possible).
+                // NullWriteScheduler blocks any mutation from reaching the coordinator/disk.
                 let bootstrap = Self.makeBootstrapDocument(imageURL: imageURL, imageId: imgId)
-                store = AnnotationStore(initial: bootstrap, imageId: imgId, scheduler: adapter)
+                let nullScheduler = NullWriteScheduler()
+                store = AnnotationStore(initial: bootstrap, imageId: imgId, scheduler: nullScheduler)
                 store.lastError = storeError
+                // Return immediately — no conflict wiring needed (store is read-only).
+                return AnnotatorLifecycleContext(store: store, coordinator: coordinator)
             }
         } else {
-            // First open — no existing annotations.json.
+            // First open — no existing annotations.json. Bootstrap + live scheduler.
             let bootstrap = Self.makeBootstrapDocument(imageURL: imageURL, imageId: imgId)
             store = AnnotationStore(initial: bootstrap, imageId: imgId, scheduler: adapter)
+        }
+
+        // B2 fix: wire conflict detection from coordinator → store.lastConflict.
+        // The coordinator calls this handler (on a background task) after emitting a sidecar.
+        // We hop to @MainActor to set store.lastConflict safely.
+        await coordinator.setConflictHandler { [store] event in
+            Task { @MainActor in
+                store.lastConflict = event
+            }
         }
 
         return AnnotatorLifecycleContext(store: store, coordinator: coordinator)

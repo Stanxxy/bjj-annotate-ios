@@ -456,14 +456,35 @@ private struct AdaptiveInstanceListModifier: ViewModifier {
     @Binding var selectedId: Int?
 
     @State private var isSheetShowing = true
-    @Environment(\.horizontalSizeClass) private var sizeClass
 
     func body(content: Content) -> some View {
-        let layout = Layout(sizeClass)
-        switch layout {
-        case .sheet:
-            content
-                .sheet(isPresented: $isSheetShowing) {
+        // AC #12: branch on horizontalSizeClass via Layout.AdaptiveAnchor.
+        // compact (iPhone portrait, iPad Slide Over) → bottom sheet.
+        // regular (iPad full-screen / Split View) → right rail.
+        // Layout.AdaptiveAnchor reads @Environment(\.horizontalSizeClass) internally,
+        // satisfying R-UI-1 (no UIDevice.userInterfaceIdiom) and AC #12.
+        Layout.AdaptiveAnchor(
+            compact: {
+                content
+                    .sheet(isPresented: $isSheetShowing) {
+                        InstanceList(
+                            model: InstanceListModel(store: store),
+                            selectedInstanceId: selectedId,
+                            onSelect: { id in selectedId = id },
+                            onDelete: { id in
+                                store.deleteInstance(instanceId: id)
+                                if selectedId == id { selectedId = nil }
+                            }
+                        )
+                        .presentationDetents([.fraction(0.33), .fraction(0.85)])
+                        .presentationBackgroundInteraction(.enabled)
+                        .interactiveDismissDisabled()
+                    }
+            },
+            regular: {
+                HStack(spacing: 0) {
+                    content
+                    Divider()
                     InstanceList(
                         model: InstanceListModel(store: store),
                         selectedInstanceId: selectedId,
@@ -473,26 +494,10 @@ private struct AdaptiveInstanceListModifier: ViewModifier {
                             if selectedId == id { selectedId = nil }
                         }
                     )
-                    .presentationDetents([.fraction(0.33), .fraction(0.85)])
-                    .presentationBackgroundInteraction(.enabled)
-                    .interactiveDismissDisabled()
+                    .frame(maxWidth: 320)
+                    .background(Color(.secondarySystemBackground))
                 }
-        case .rail:
-            HStack(spacing: 0) {
-                content
-                Divider()
-                InstanceList(
-                    model: InstanceListModel(store: store),
-                    selectedInstanceId: selectedId,
-                    onSelect: { id in selectedId = id },
-                    onDelete: { id in
-                        store.deleteInstance(instanceId: id)
-                        if selectedId == id { selectedId = nil }
-                    }
-                )
-                .frame(maxWidth: 320)
-                .background(Color(.secondarySystemBackground))
             }
-        }
+        )
     }
 }
