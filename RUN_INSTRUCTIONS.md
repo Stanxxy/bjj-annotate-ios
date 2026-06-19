@@ -91,17 +91,27 @@ private var lastError` alert; picker errors route through
 `bookmarkStore.lastError` (`.pickerFailed` case) and surface via the
 same `safeAreaInset` banner.
 
-Deferred to a follow-up integration dispatch (not blocking T14–T24
-code-complete sign-off):
-  - Per-image `AnnotationStore` + `CocoFileCoordinator` lifecycle owned
-    by `AnnotatorView` (currently the canvas accepts an optional store
-    for gesture testing; the view does not yet construct one). Once the
-    store lifecycle lands, `ClassChipRow` + `AthletePicker` + `InstanceList`
-    + `ConflictBanner` + `.flushOnWillResignActive(...)` from T17/T18/T19/
-    T20/T21 plug straight in — they are individually unit-tested and the
-    types are stable.
-  - Conflict surface on `ProjectGridView` (AC #34) — needs a project-
-    level conflict store, separate from the per-image one.
+Expected (Phase 1 complete — I1-I4 integration, `feature/phase-1-domain-boxes`):
+~180 unit tests + 9 UI tests, 0 failures. The integration dispatch added:
+  - `AnnotatorViewLifecycleTests` (5) — I1 red tests for AnnotatorLifecycleContext.
+  - `ProjectLevelConflictTests` (3) — I3 red tests for ProjectAnnotationConflictWatcher.
+  - `GoldenPathDiskRoundtripTests` (2) — I4 two-phase disk roundtrip (write+flush, rebuild+reload).
+
+Red test commit `fb21d34` is parent of feat commit `771f530` (Marker G).
+
+Integration changes:
+  - `AnnotatorLifecycleContext` (I1): per-project store+coordinator factory. `make(folderURL:imageURL:ubiquity:)` async throws. Bootstrap on first open (3 BJJ COCO categories). `imageId` from sorted `scanImages` position (1-based). Decode failure sets `store.lastError` then continues with bootstrap.
+  - `ProjectAnnotationConflictWatcher` (I3): `@Observable @MainActor` project-level conflict watcher. `receive(conflictEvent:)` / `inject(_:)` for test injection. `bannerMessage` uses `LockedCopy.conflictBanner`. `dismiss()` clears conflict.
+  - `AnnotatorView` (I2): owns per-project lifecycle via `@State context: AnnotatorLifecycleContext`. `.task` loads context. Back button: `LifecycleFlushBridge.flushSynchronously`. `AdaptiveInstanceListModifier`: `.sheet`/`.rail` via `Layout.AdaptiveAnchor`. `onDelete` wired through both branches. Flag button uses `store.toggleFlag()`. `.onChange(of: store.lastConflict)` mirrors upward to `conflictWatcher`.
+  - `ProjectGridView` (I3): `gridConflictBanner` via `.safeAreaInset(edge: .top)` for AC #34.
+  - `RootView.NavigationDestination.annotator`: +`folderURL` param.
+  - `AnnotationStore.toggleFlag()` (AC #4 single-setter pattern).
+  - `ImageStateTracker.toggleFlag(in:imageId:)` static variant + `nowISO8601()` visibility.
+  - `InstanceList.onDelete`: swipe-to-delete destructive action.
+  - `ProjectGridViewModel.folderURL`: exposes project folder URL for navigation.
+
+Trap #1 verified: `CODE_SIGNING_ALLOWED`=0, `DEVELOPMENT_TEAM`=0 in pbxproj.
+Trap #2: pbxproj diff (5 new files, 10 UUIDs) in same commit as source files.
 
 Simulator destination on this machine uses `iPhone 16e,OS=26.2`; iPhone
 16 with OS 26.2 is not provisioned in the local simulator runtime.
