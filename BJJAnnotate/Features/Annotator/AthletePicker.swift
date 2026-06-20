@@ -64,6 +64,16 @@ final class AthletePickerModel {
     func allocateNew(on instanceId: Int) -> String? {
         return store.allocateAndBindAthlete(toInstanceId: instanceId)
     }
+
+    /// True when no annotation in the project references this athlete-id.
+    func isOrphan(athleteId: String) -> Bool {
+        !store.coco.annotations.contains(where: { $0.attributes.athlete_id == athleteId })
+    }
+
+    /// Removes an orphaned athlete from the project dictionary. No-op if still bound.
+    func remove(athleteId: String) {
+        store.removeOrphanAthlete(athleteId: athleteId)
+    }
 }
 
 struct AthletePicker: View {
@@ -93,6 +103,16 @@ struct AthletePicker: View {
                             .padding(.vertical, 6)
                         }
                         .accessibilityIdentifier("Annotator.AthletePicker.Row.\(row.athleteId)")
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            if model.isOrphan(athleteId: row.athleteId) {
+                                Button(role: .destructive) {
+                                    model.remove(athleteId: row.athleteId)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .accessibilityIdentifier("Annotator.AthletePicker.Row.\(row.athleteId).Delete")
+                            }
+                        }
                     }
                 }
                 Section {

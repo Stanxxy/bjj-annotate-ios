@@ -234,6 +234,21 @@ final class AnnotationStore {
         coco = next
         scheduler.scheduleWrite(coco)
     }
+
+    /// Removes an orphaned athlete from the project athlete dictionary.
+    /// The no-reuse invariant is preserved: `AthleteRegistry.allocate` uses
+    /// `max(existing_ids) + 1`, so the freed id will never be backfilled.
+    /// Silently does nothing if the athlete is still referenced by any annotation.
+    func removeOrphanAthlete(athleteId: String) {
+        guard !coco.annotations.contains(where: { $0.attributes.athlete_id == athleteId }) else {
+            return
+        }
+        var next = coco
+        next.bjj_annotate_meta?.athletes.removeAll { $0.id == athleteId }
+        // MARK: Undo registration site (Phase 4 hook)
+        coco = next
+        scheduler.scheduleWrite(coco)
+    }
 }
 
 /// Conflict event published by the file coordinator (T10). Phase 1 carries only

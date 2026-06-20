@@ -104,6 +104,7 @@ struct AnnotatorCanvasView: View {
                 dragPreview(stage: stage, viewSize: viewSize, imageSize: imageSize)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .gesture(
             pinchGesture()
                 .simultaneously(with: combinedDragGesture(viewSize: viewSize, imageSize: imageSize))
