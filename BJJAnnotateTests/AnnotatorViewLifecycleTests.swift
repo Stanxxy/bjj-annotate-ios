@@ -105,7 +105,9 @@ final class AnnotatorViewLifecycleTests: XCTestCase {
         )
         ctx1.store.upsertBox(BBoxIntent(rect: BBox(x: 10, y: 10, w: 50, h: 50)))
         // Flush immediately (bypass 500ms debounce for test determinism).
-        await ctx1.coordinator.flushNow()
+        // Use adapter.flushNow() so the latest payload is passed as a fallback,
+        // resolving the adapter-task race between scheduleWrite and flushNow.
+        await ctx1.adapter?.flushNow()
 
         // Second open: new context reads from disk.
         let ctx2 = try await AnnotatorLifecycleContext.make(
@@ -129,7 +131,7 @@ final class AnnotatorViewLifecycleTests: XCTestCase {
             ubiquity: FakeUbiquityResolver()
         )
         ctx.store.upsertBox(BBoxIntent(rect: BBox(x: 0, y: 0, w: 100, h: 100)))
-        await ctx.coordinator.flushNow()
+        await ctx.adapter?.flushNow()
 
         let annotationsURL = tempDir.appendingPathComponent("annotations.json")
         XCTAssertTrue(

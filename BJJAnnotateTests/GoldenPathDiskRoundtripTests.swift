@@ -91,7 +91,7 @@ final class GoldenPathDiskRoundtripTests: XCTestCase {
         _ = ctx1.store.allocateAndBindAthlete(toInstanceId: instanceId)
 
         // Flush to disk.
-        await ctx1.coordinator.flushNow()
+        await ctx1.adapter?.flushNow()
 
         // Assert file exists.
         let annotationsURL = tempDir.appendingPathComponent("annotations.json")
@@ -141,7 +141,7 @@ final class GoldenPathDiskRoundtripTests: XCTestCase {
         ctx1.store.deleteInstance(instanceId: ids[4])
 
         // Flush.
-        await ctx1.coordinator.flushNow()
+        await ctx1.adapter?.flushNow()
 
         // Reopen.
         let ctx2 = try await AnnotatorLifecycleContext.make(
