@@ -144,7 +144,7 @@ struct AnnotatorView: View {
             }
         }
         // Surface store.lastError as a banner.
-        .safeAreaInset(edge: .top) {
+        .overlay(alignment: .top) {
             if let err = store.lastError {
                 errorBanner(error: err, store: store)
             }
@@ -161,16 +161,17 @@ struct AnnotatorView: View {
 
     @ViewBuilder
     private func annotatorLayout(store: AnnotationStore, coordinator: CocoFileCoordinator) -> some View {
-        VStack(spacing: 0) {
-            // Canvas (image + boxes + gesture layer).
-            canvasRegion(store: store)
+        canvasRegion(store: store)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    // Tool selector row.
+                    toolSelectorRow
 
-            // Tool selector row.
-            toolSelectorRow
-
-            // Class chips + athlete picker trigger.
-            classAndAthleteRow(store: store)
-        }
+                    // Class chips + athlete picker trigger.
+                    classAndAthleteRow(store: store)
+                }
+                .background(.regularMaterial)
+            }
         // I2: instance list — adaptive (bottom sheet on compact, rail on regular).
         .adaptiveInstanceList(store: store, selectedId: $selectedInstanceId)
         .accessibilityIdentifier("Annotator.WiredLayout")
@@ -183,9 +184,7 @@ struct AnnotatorView: View {
             tool: tool,
             rejectionToastVisible: $rejectionToastVisible
         )
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 0)
-        .layoutPriority(1)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .accessibilityElement(children: .contain)
     }

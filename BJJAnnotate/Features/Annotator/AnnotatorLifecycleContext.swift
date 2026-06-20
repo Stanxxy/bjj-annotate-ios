@@ -143,7 +143,8 @@ struct AnnotatorLifecycleContext {
         if FileManager.default.fileExists(atPath: annotationsURL.path) {
             do {
                 let doc = try await coordinator.readDocument()
-                store = AnnotationStore(initial: doc, imageId: imgId, scheduler: adapter)
+                let migratedDoc = Self.backfillAthleteIds(doc)
+                store = AnnotationStore(initial: migratedDoc, imageId: imgId, scheduler: adapter)
             } catch {
                 // M2 fix: decode / read failure must NOT hand back a writable bootstrap
                 // pointed at the LIVE annotations.json. The writable adapter would let the
@@ -195,6 +196,25 @@ struct AnnotatorLifecycleContext {
     }
 
     // MARK: - Private
+
+    /// Backfill athlete_id for annotations that are athlete-category but have nil athlete_id.
+    /// This repairs data created before the allocation code was stable.
+    /// Safe to run multiple times (idempotent — only touches nil athlete_ids).
+    private static func backfillAthleteIds(_ doc: CocoDocument) -> CocoDocument {
+        var result = doc
+        guard result.bjj_annotate_meta != nil else { return result }
+        for i in result.annotations.indices {
+            let ann = result.annotations[i]
+            guard ann.category_id != ClassCategory.ref.rawValue,
+                  ann.attributes.athlete_id == nil else { continue }
+            // Allocate next free id from current meta state.
+            if let allocated = AthleteRegistry.allocate(in: result.bjj_annotate_meta?.athletes ?? []) {
+                result.annotations[i].attributes.athlete_id = allocated.id
+                result.bjj_annotate_meta?.athletes.append(allocated)
+            }
+        }
+        return result
+    }
 
     private static func makeBootstrapDocument(imageURL: URL, imageId: Int) -> CocoDocument {
         let imageName = imageURL.lastPathComponent
