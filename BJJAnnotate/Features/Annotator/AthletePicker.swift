@@ -122,7 +122,7 @@ struct AthletePicker: View {
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(.tint)
                     Text(copy)
                         .foregroundStyle(.primary)
                     Spacer()

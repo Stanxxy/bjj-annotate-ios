@@ -99,7 +99,7 @@ struct InstanceList: View {
                                 Spacer()
                                 if row.instanceId == selectedInstanceId {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(.accent)
+                                        .foregroundStyle(.tint)
                                         .accessibilityHidden(true)
                                 }
                             }

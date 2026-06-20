@@ -72,6 +72,14 @@ actor CocoFileCoordinator {
         self.onConflictDetected = handler
     }
 
+    /// Test-only seam: fires the conflict handler with a synthetic event, allowing
+    /// B2 wire tests to exercise the handler→store.lastConflict hop without needing
+    /// real NSFileVersion iCloud two-process writes (which are unavailable in tests).
+    /// Production code never calls this; only `ConflictWireEndToEndTests` does.
+    func fireConflictHandlerForTest(_ event: ConflictEvent) {
+        onConflictDetected?(event)
+    }
+
     // MARK: - Read
 
     /// Reads + decodes the annotations file. If the file is an iCloud placeholder,
@@ -213,7 +221,7 @@ actor CocoFileCoordinator {
         }
     }
 
-    /// B2: Probes `NSFileVersion.unresolvedConflictVersions(of:)`. If conflicts exist:
+    /// B2: Probes `NSFileVersion.unresolvedConflictVersionsOfItem(at:)`. If conflicts exist:
     /// - Reads the loser's bytes from its version URL.
     /// - Emits a `annotations.conflict-<ISO8601>.json` sidecar via `ConflictSidecar.emit`.
     /// - Marks the version as resolved so iCloud stops surfacing it.
@@ -224,7 +232,7 @@ actor CocoFileCoordinator {
     /// AC #34: no loser data silently discarded.
     /// AC #36: athlete dictionaries are NEVER merged — the sidecar preserves the loser verbatim.
     private func resolveConflictsIfNeeded(winnerPayload: CocoDocument) async {
-        guard let conflicts = NSFileVersion.unresolvedConflictVersions(of: url),
+        guard let conflicts = NSFileVersion.unresolvedConflictVersionsOfItem(at: url),
               !conflicts.isEmpty else {
             return
         }
@@ -235,11 +243,7 @@ actor CocoFileCoordinator {
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
 
         for version in conflicts {
-            guard let versionURL = version.url else {
-                logger.warning("Conflict version has nil url — skipping.")
-                version.isResolved = true
-                continue
-            }
+            let versionURL = version.url
             // Read the loser's bytes.
             let loserBytes: Data
             do {
@@ -289,15 +293,12 @@ actor CocoFileCoordinator {
             logger.info("ConflictSidecar emitted: \(event.sidecarURL.lastPathComponent, privacy: .public)")
         }
         // Remove all old versions after resolution to keep the version history clean.
-        // removeOtherVersions is best-effort; failure is non-fatal (iCloud may retry).
-        let capturedURL = url
-        let capturedLogger = logger
-        Task {
-            NSFileVersion.removeOtherVersions(of: capturedURL) { error in
-                if let error = error {
-                    capturedLogger.warning("removeOtherVersions failed (non-fatal): \(error.localizedDescription, privacy: .public)")
-                }
-            }
+        // removeOtherVersionsOfItem(at:) is synchronous + throwing; failure is non-fatal
+        // (iCloud may retry). AC #34 data-safety is already satisfied by the sidecar above.
+        do {
+            try NSFileVersion.removeOtherVersionsOfItem(at: url)
+        } catch {
+            logger.warning("removeOtherVersions failed (non-fatal): \(error.localizedDescription, privacy: .public)")
         }
     }
 
