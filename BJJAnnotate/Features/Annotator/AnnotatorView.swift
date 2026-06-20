@@ -76,6 +76,12 @@ struct AnnotatorView: View {
             }
         }
         .accessibilityIdentifier("Annotator.Root")
+        // On iOS 26 a Group-level accessibilityIdentifier propagates to all
+        // descendant elements, shadowing their own identifiers. Adding
+        // .accessibilityElement(children: .contain) tells the engine to expose
+        // Annotator.Root as a named container whose children remain independently
+        // accessible with their own identifiers.
+        .accessibilityElement(children: .contain)
         .overlay(alignment: .top) {
             toastOverlay
         }

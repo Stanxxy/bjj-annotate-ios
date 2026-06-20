@@ -67,8 +67,8 @@ struct ProjectListView: View {
         }
         // L-3 carry-forward: picker errors route through `viewModel.surfacePickerError`
         // into `bookmarkStore.lastError` and surface via the same banner above.
-        // The legacy `.alert(...)` + `@State private var lastError` parallel state
-        // is intentionally removed — single source of truth.
+        // The legacy picker-error alert (two sources of truth for picker failures) is
+        // intentionally removed — single source of truth via BookmarkStore.lastError.
         .task {
             await viewModel.refresh()
         }

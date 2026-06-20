@@ -73,12 +73,15 @@ struct ProjectFolder {
         var resolved: [URL] = []
         resolved.reserveCapacity(candidates.count)
         for candidate in candidates {
-            // Decide ubiquity status; if the call throws, treat the file as
-            // unavailable and skip (best signal we have without iCloud).
+            // Decide ubiquity status. If the call throws (e.g. the iCloud resource key
+            // is not available for a local tmp path on iOS 26), treat the file as NOT
+            // ubiquitous and include it — excluding it would silently empty the grid for
+            // all non-iCloud folders (the common case in tests and on-device local storage).
             let isUbiquitous: Bool
             do {
                 isUbiquitous = try ubiquity.isUbiquitous(at: candidate)
             } catch {
+                resolved.append(candidate)
                 continue
             }
             if !isUbiquitous {

@@ -47,11 +47,15 @@ final class ProjectGridViewModel {
             displayName = url.lastPathComponent
             folderURL = url
 
-            guard url.startAccessingSecurityScopedResource() else {
-                state = .error("Couldn't access that folder.")
-                return
+            // `startAccessingSecurityScopedResource()` returns true for security-scoped
+            // bookmarks (iCloud Drive, external volumes). For local temp paths (UI tests,
+            // Documents directory without entitlement) it returns false as a no-op.
+            // We proceed regardless — if access truly fails the scan will throw and
+            // the `.error` state will surface via the catch below.
+            let accessStarted = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessStarted { url.stopAccessingSecurityScopedResource() }
             }
-            defer { url.stopAccessingSecurityScopedResource() }
 
             let folder = ProjectFolder(url: url)
             let scan = try await Task.detached(priority: .userInitiated) {

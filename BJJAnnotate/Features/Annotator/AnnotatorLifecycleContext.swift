@@ -31,6 +31,11 @@ enum AnnotatorLifecycleError: Error, Equatable {
 struct AnnotatorLifecycleContext {
     let store: AnnotationStore
     let coordinator: CocoFileCoordinator
+    /// The write adapter; exposed so tests can call `adapter.flushNow()` which
+    /// supplies the latest payload as a fallback, resolving the adapter-task race
+    /// between `scheduleWrite(payload)` and an immediate `coordinator.flushNow()`.
+    /// Production code uses `LifecycleFlushBridge.flushSynchronously(coordinator:)`.
+    let adapter: CocoWriteSchedulingAdapter?
 
     // MARK: - Bootstrap
 
@@ -168,7 +173,8 @@ struct AnnotatorLifecycleContext {
                 store = AnnotationStore(initial: bootstrap, imageId: imgId, scheduler: nullScheduler)
                 store.lastError = storeError
                 // Return immediately — no conflict wiring needed (store is read-only).
-                return AnnotatorLifecycleContext(store: store, coordinator: coordinator)
+                // adapter is nil: NullWriteScheduler is in use, nothing to flush.
+                return AnnotatorLifecycleContext(store: store, coordinator: coordinator, adapter: nil)
             }
         } else {
             // First open — no existing annotations.json. Bootstrap + live scheduler.
@@ -185,7 +191,7 @@ struct AnnotatorLifecycleContext {
             }
         }
 
-        return AnnotatorLifecycleContext(store: store, coordinator: coordinator)
+        return AnnotatorLifecycleContext(store: store, coordinator: coordinator, adapter: adapter)
     }
 
     // MARK: - Private

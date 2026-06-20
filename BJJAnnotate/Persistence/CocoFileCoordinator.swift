@@ -128,10 +128,19 @@ actor CocoFileCoordinator {
     /// Synchronously flushes any pending debounced write. AC #27 / AC #38 /
     /// Marker F: the caller awaits this from within `willResignActive` so the
     /// process is not suspended mid-write.
-    func flushNow() async {
+    ///
+    /// - Parameter latestFallback: a payload supplied by the caller as a fallback
+    ///   when the adapter's fire-and-forget `Task { await scheduleWrite(payload) }`
+    ///   has not yet been processed by the actor (race between the adapter's task
+    ///   and an immediate `flushNow()` call). If the actor already has a pending
+    ///   payload (the normal path), `latestFallback` is ignored.
+    func flushNow(latestFallback: CocoDocument? = nil) async {
         pendingTask?.cancel()
         pendingTask = nil
-        guard let payload = pendingPayload else { return }
+        // Use the actor's own pending payload if available; fall back to the
+        // caller-supplied payload to handle the adapter-task race.
+        let payload = pendingPayload ?? latestFallback
+        guard let payload = payload else { return }
         pendingPayload = nil
         state = .writing
         await persist(payload)
@@ -373,12 +382,30 @@ actor CocoFileCoordinator {
 /// main-actor perspective. Owns a reference to the actor and forwards calls
 /// via `Task { await ... }`. AnnotationStore initializes with this adapter
 /// instead of the actor directly.
+///
+/// `latestPayload` is updated synchronously on every `scheduleWrite(_:)` call
+/// (before the async hop) so `flushNow(latestFallback:)` can safely pick it up
+/// even when the actor's task-queue has not yet processed the `scheduleWrite`
+/// message (the adapter-task race in immediate flush scenarios — tests + AC #27).
 final class CocoWriteSchedulingAdapter: WriteScheduling, @unchecked Sendable {
     let coordinator: CocoFileCoordinator
+    /// Last payload received from the store. Updated before the async hop so
+    /// `flushNow(latestFallback:)` can drain it even if the actor task hasn't run yet.
+    private(set) var latestPayload: CocoDocument?
+
     init(coordinator: CocoFileCoordinator) {
         self.coordinator = coordinator
     }
     func scheduleWrite(_ payload: CocoDocument) {
+        latestPayload = payload
         Task { await coordinator.scheduleWrite(payload) }
+    }
+
+    /// Flushes the latest payload to disk, bypassing the debounce timer.
+    /// Passes `latestPayload` as the fallback so even an unprocessed actor-queue
+    /// `scheduleWrite` message still reaches disk.
+    func flushNow() async {
+        await coordinator.flushNow(latestFallback: latestPayload)
+        latestPayload = nil
     }
 }
