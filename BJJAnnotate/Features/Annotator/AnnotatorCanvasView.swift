@@ -89,7 +89,7 @@ struct AnnotatorCanvasView: View {
 
             // Existing annotations overlay (T16 — render all boxes, highlight selection).
             if let store = store {
-                ForEach(store.coco.annotations, id: \.id) { ann in
+                ForEach(store.annotationsForCurrentImage, id: \.id) { ann in
                     annotationOverlay(annotation: ann, viewSize: viewSize, imageSize: imageSize)
                 }
                 // Handles for the selected box.
@@ -332,7 +332,7 @@ struct AnnotatorCanvasView: View {
                 }
             }
             // 2) Otherwise hit-test every box body to select a new one.
-            for ann in store.coco.annotations {
+            for ann in store.annotationsForCurrentImage {
                 let r = liveRect(for: ann)
                 let body = CGRect(x: r.x, y: r.y, width: r.w, height: r.h)
                 if body.contains(startImg) {

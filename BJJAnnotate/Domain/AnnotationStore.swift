@@ -83,6 +83,12 @@ final class AnnotationStore {
     /// Clears `lastConflict` once the user has dismissed the banner.
     func clearLastConflict() { lastConflict = nil }
 
+    /// Annotations scoped to the currently open image. Use for display and hit-testing;
+    /// mutation methods locate instances by globally-unique `id` and don't need this filter.
+    var annotationsForCurrentImage: [CocoAnnotation] {
+        coco.annotations.filter { $0.image_id == imageId }
+    }
+
     // MARK: - Mutations
 
     /// Creates a new box OR updates an existing one. Returns the (possibly newly

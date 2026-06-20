@@ -26,7 +26,7 @@ final class InstanceListModel {
     }
 
     var rows: [Row] {
-        return store.coco.annotations
+        return store.annotationsForCurrentImage
             .sorted { $0.id < $1.id }
             .map { ann in
                 if ann.category_id == ClassCategory.ref.rawValue {
