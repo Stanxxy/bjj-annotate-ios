@@ -200,14 +200,29 @@ struct AnnotatorLifecycleContext {
     /// Backfill athlete_id for annotations that are athlete-category but have nil athlete_id.
     /// This repairs data created before the allocation code was stable.
     /// Safe to run multiple times (idempotent — only touches nil athlete_ids).
+    ///
+    /// Ghost-athlete purge: athletes listed in meta but referenced by zero annotations
+    /// are removed first. Without this, a cap-full ghost list (8 entries, 0 referenced)
+    /// blocks AthleteRegistry.allocate from assigning real slots, leaving every row "—".
     private static func backfillAthleteIds(_ doc: CocoDocument) -> CocoDocument {
         var result = doc
         guard result.bjj_annotate_meta != nil else { return result }
+
+        // Remove athletes not referenced by any annotation so the allocator has room.
+        let referencedIds = Set(
+            result.annotations
+                .filter { $0.category_id != ClassCategory.ref.rawValue }
+                .compactMap { $0.attributes.athlete_id }
+        )
+        let validAthletes = (result.bjj_annotate_meta?.athletes ?? [])
+            .filter { referencedIds.contains($0.id) }
+        result.bjj_annotate_meta?.athletes = validAthletes
+
+        // Allocate fresh ids for annotations that have none.
         for i in result.annotations.indices {
             let ann = result.annotations[i]
             guard ann.category_id != ClassCategory.ref.rawValue,
                   ann.attributes.athlete_id == nil else { continue }
-            // Allocate next free id from current meta state.
             if let allocated = AthleteRegistry.allocate(in: result.bjj_annotate_meta?.athletes ?? []) {
                 result.annotations[i].attributes.athlete_id = allocated.id
                 result.bjj_annotate_meta?.athletes.append(allocated)

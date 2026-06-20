@@ -32,9 +32,9 @@ struct AnnotatorCanvasView: View {
 
     @State private var transform: CanvasTransform = CanvasTransform()
     @State private var dragStage: BoxDragStage? = nil
-    /// Currently-selected annotation id (T16). Drives handle rendering + the
-    /// instance list highlight (T19 wires the reverse direction).
-    @State private var selectedInstanceId: Int? = nil
+    /// Currently-selected annotation id (T16). Bound to `AnnotatorView.selectedInstanceId`
+    /// so that canvas draws/selects propagate up to the class-chip row and instance list.
+    @Binding var selectedInstanceId: Int?
     /// Active resize/move during a `.select`-mode drag. View-local; commits to
     /// store on `.onEnded` only (same R-UI-2 contract as `.box` mode).
     @State private var selectStage: SelectStage? = nil
@@ -48,12 +48,14 @@ struct AnnotatorCanvasView: View {
         imageURL: URL,
         store: AnnotationStore? = nil,
         tool: AnnotatorTool = .box,
-        rejectionToastVisible: Binding<Bool> = .constant(false)
+        rejectionToastVisible: Binding<Bool> = .constant(false),
+        selectedInstanceId: Binding<Int?> = .constant(nil)
     ) {
         self.imageURL = imageURL
         self.store = store
         self.tool = tool
         self._rejectionToastVisible = rejectionToastVisible
+        self._selectedInstanceId = selectedInstanceId
     }
 
     var body: some View {

@@ -161,20 +161,24 @@ struct AnnotatorView: View {
 
     @ViewBuilder
     private func annotatorLayout(store: AnnotationStore, coordinator: CocoFileCoordinator) -> some View {
-        canvasRegion(store: store)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 0) {
-                    // Tool selector row.
-                    toolSelectorRow
-
-                    // Class chips + athlete picker trigger.
-                    classAndAthleteRow(store: store)
-                }
-                .background(.regularMaterial)
-            }
         // I2: instance list — adaptive (bottom sheet on compact, rail on regular).
-        .adaptiveInstanceList(store: store, selectedId: $selectedInstanceId)
-        .accessibilityIdentifier("Annotator.WiredLayout")
+        // The toolbar and class chips are passed as a sheet header so they appear
+        // ABOVE the instance list inside the sheet. Placing them behind the sheet
+        // via safeAreaInset(edge:.bottom) hides them because iOS sheets overlay the
+        // full window regardless of where .sheet() is attached in the view tree.
+        canvasRegion(store: store)
+            .adaptiveInstanceList(
+                store: store,
+                selectedId: $selectedInstanceId,
+                toolbarHeader: {
+                    VStack(spacing: 0) {
+                        toolSelectorRow
+                        classAndAthleteRow(store: store)
+                    }
+                    .background(.regularMaterial)
+                }
+            )
+            .accessibilityIdentifier("Annotator.WiredLayout")
     }
 
     private func canvasRegion(store: AnnotationStore) -> some View {
@@ -182,7 +186,8 @@ struct AnnotatorView: View {
             imageURL: imageURL,
             store: store,
             tool: tool,
-            rejectionToastVisible: $rejectionToastVisible
+            rejectionToastVisible: $rejectionToastVisible,
+            selectedInstanceId: $selectedInstanceId
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
@@ -447,18 +452,23 @@ struct AnnotatorView: View {
 
 private extension View {
     /// Attaches the instance list as a bottom sheet (compact) or right rail (regular).
-    /// Uses `Layout.AdaptiveAnchor` so the size-class signal is the only branch.
-    func adaptiveInstanceList(
+    /// On compact, `toolbarHeader` is rendered at the TOP of the sheet so it remains
+    /// visible above the instance list — placing it behind the sheet via safeAreaInset
+    /// would make it invisible because iOS sheets overlay the full window.
+    /// Uses `Layout.AdaptiveAnchor` so the size-class signal is the only branch (R-UI-1).
+    func adaptiveInstanceList<Header: View>(
         store: AnnotationStore,
-        selectedId: Binding<Int?>
+        selectedId: Binding<Int?>,
+        @ViewBuilder toolbarHeader: @escaping () -> Header
     ) -> some View {
-        self.modifier(AdaptiveInstanceListModifier(store: store, selectedId: selectedId))
+        self.modifier(AdaptiveInstanceListModifier(store: store, selectedId: selectedId, toolbarHeader: toolbarHeader))
     }
 }
 
-private struct AdaptiveInstanceListModifier: ViewModifier {
+private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
     let store: AnnotationStore
     @Binding var selectedId: Int?
+    let toolbarHeader: () -> Header
 
     @State private var isSheetShowing = true
 
@@ -472,15 +482,19 @@ private struct AdaptiveInstanceListModifier: ViewModifier {
             compact: {
                 content
                     .sheet(isPresented: $isSheetShowing) {
-                        InstanceList(
-                            model: InstanceListModel(store: store),
-                            selectedInstanceId: selectedId,
-                            onSelect: { id in selectedId = id },
-                            onDelete: { id in
-                                store.deleteInstance(instanceId: id)
-                                if selectedId == id { selectedId = nil }
-                            }
-                        )
+                        VStack(spacing: 0) {
+                            toolbarHeader()
+                            Divider()
+                            InstanceList(
+                                model: InstanceListModel(store: store),
+                                selectedInstanceId: selectedId,
+                                onSelect: { id in selectedId = id },
+                                onDelete: { id in
+                                    store.deleteInstance(instanceId: id)
+                                    if selectedId == id { selectedId = nil }
+                                }
+                            )
+                        }
                         .presentationDetents([.fraction(0.33), .fraction(0.85)])
                         .presentationBackgroundInteraction(.enabled)
                         .interactiveDismissDisabled()
