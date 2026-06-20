@@ -46,8 +46,8 @@ final class AthletePickerModel {
     }
 
     var bottomRow: BottomRow {
-        let count = store.coco.bjj_annotate_meta?.athletes.count ?? 0
-        if count >= AthleteRegistry.cap {
+        let athletes = store.coco.bjj_annotate_meta?.athletes ?? []
+        if AthleteRegistry.allocate(in: athletes) == nil {
             return .locked(LockedCopy.projectFullAthleteCap)
         }
         return .newAthlete(LockedCopy.newAthleteRow)
@@ -65,14 +65,10 @@ final class AthletePickerModel {
         return store.allocateAndBindAthlete(toInstanceId: instanceId)
     }
 
-    /// True when no annotation in the project references this athlete-id.
-    func isOrphan(athleteId: String) -> Bool {
-        !store.coco.annotations.contains(where: { $0.attributes.athlete_id == athleteId })
-    }
-
-    /// Removes an orphaned athlete from the project dictionary. No-op if still bound.
+    /// Removes an athlete from the project dictionary. If any annotations reference
+    /// this athlete, their athlete_id is cleared before removal.
     func remove(athleteId: String) {
-        store.removeOrphanAthlete(athleteId: athleteId)
+        store.removeAthlete(athleteId: athleteId)
     }
 }
 
@@ -104,14 +100,12 @@ struct AthletePicker: View {
                         }
                         .accessibilityIdentifier("Annotator.AthletePicker.Row.\(row.athleteId)")
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            if model.isOrphan(athleteId: row.athleteId) {
-                                Button(role: .destructive) {
-                                    model.remove(athleteId: row.athleteId)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                .accessibilityIdentifier("Annotator.AthletePicker.Row.\(row.athleteId).Delete")
+                            Button(role: .destructive) {
+                                model.remove(athleteId: row.athleteId)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                            .accessibilityIdentifier("Annotator.AthletePicker.Row.\(row.athleteId).Delete")
                         }
                     }
                 }
