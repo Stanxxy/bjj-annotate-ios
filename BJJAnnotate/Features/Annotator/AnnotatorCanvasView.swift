@@ -301,12 +301,45 @@ struct AnnotatorCanvasView: View {
 
     // MARK: - .keypoints tap path (Phase 2)
 
-    /// Converts a tap location to image coordinates and places the active keypoint.
+    /// Converts a tap location to image coordinates, then either:
+    ///   1. Cycles visibility if the tap hits an already-placed keypoint dot, OR
+    ///   2. Places the active picker keypoint at the tapped image coordinate.
+    ///
+    /// Hit radius is 8pt in view space, converted to image-pixel space by dividing
+    /// by the current rendered scale (baseScale × zoom). This keeps the on-screen
+    /// touch target constant regardless of zoom level.
     private func onKeypointTap(location: CGPoint, viewSize: CGSize, imageSize: CGSize) {
         guard let store = store,
               let pickerVM = keypointPickerVM,
               let instanceId = selectedInstanceId else { return }
+
         let imgPt = transform.viewToImage(viewPoint: location, viewSize: viewSize, imageSize: imageSize)
+
+        // Compute the hit radius in image-pixel space so the on-screen target stays at 8pt.
+        let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+        let renderedScale = baseScale * transform.zoom
+        let hitRadiusImage: CGFloat = renderedScale > 0 ? 8.0 / renderedScale : 8.0
+
+        // 1. Check if the tap landed on an already-placed keypoint for the selected instance.
+        if let ann = store.coco.annotations.first(where: { $0.id == instanceId }),
+           let kps = ann.keypoints,
+           kps.count == 51 {
+            for kpDef in KeypointDefinition.all {
+                let off = kpDef.cocoArrayOffset
+                let v = Int(kps[off + 2])
+                guard v > 0 else { continue }  // only dots that are drawn (v = 1 or v = 2)
+                let kpX = kps[off]
+                let kpY = kps[off + 1]
+                let dx = imgPt.x - CGFloat(kpX)
+                let dy = imgPt.y - CGFloat(kpY)
+                if hypot(dx, dy) <= hitRadiusImage {
+                    store.cycleKeypointVisibility(instanceId: instanceId, keypointIndex: kpDef.index)
+                    return  // consumed — do NOT place the active picker point
+                }
+            }
+        }
+
+        // 2. No existing dot was hit — place the active picker keypoint.
         store.setKeypoint(
             instanceId: instanceId,
             keypointIndex: pickerVM.activeKeypointIndex,

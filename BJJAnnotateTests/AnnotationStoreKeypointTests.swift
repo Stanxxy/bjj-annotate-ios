@@ -318,6 +318,147 @@ final class AnnotationStoreKeypointTests: XCTestCase {
         vm.advance(in: store.annotationsForCurrentImage, for: id)
         XCTAssertEqual(vm.activeKeypointIndex, 11, "stays at last of arms group (11)")
     }
+
+    // MARK: - US-4-DEF-01: cycleKeypointVisibility reachable from canvas hit-test path
+
+    /// Verifies that tapping within 8pt (view) of a placed dot triggers
+    /// `cycleKeypointVisibility` rather than `setKeypoint`.
+    ///
+    /// This test replicates the decision logic from
+    /// `AnnotatorCanvasView.onKeypointTap` without spinning a UIWindow:
+    ///   1. Place a keypoint (simulates pre-existing dot).
+    ///   2. Compute whether a tap at the dot's location falls within hit radius.
+    ///   3. Assert the correct domain call (cycle) was made — verified by checking
+    ///      the resulting visibility state, which is the same evidence the store
+    ///      exposes to the canvas layer.
+    func test_cycleOnHit_visible_becomes_occluded_when_tap_inside_hitRadius() {
+        let (store, id) = makeStore()
+        // Place nose (index 1) at image coord (200, 300) as visible.
+        store.setKeypoint(instanceId: id, keypointIndex: 1, x: 200.0, y: 300.0, visibility: .visible)
+
+        // Simulate the hit-test computation from onKeypointTap:
+        //   viewSize = 390×844 (iPhone 16 portrait), imageSize = 1920×1080
+        //   zoom = 1.0 (no zoom)
+        let viewSize  = CGSize(width: 390, height: 844)
+        let imageSize = CGSize(width: 1920, height: 1080)
+        let zoom: CGFloat = 1.0
+        let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+        let renderedScale = baseScale * zoom
+        let hitRadiusImage: CGFloat = renderedScale > 0 ? 8.0 / renderedScale : 8.0
+
+        // Tap location: exactly at the dot in image space (distance = 0 < hitRadius).
+        let tapInImage = CGPoint(x: 200.0, y: 300.0)
+
+        let ann = store.coco.annotations.first(where: { $0.id == id })!
+        let kps = ann.keypoints!
+        var cycled = false
+        for kpDef in KeypointDefinition.all {
+            let off = kpDef.cocoArrayOffset
+            let v = Int(kps[off + 2])
+            guard v > 0 else { continue }
+            let kpX = kps[off]
+            let kpY = kps[off + 1]
+            let dx = tapInImage.x - CGFloat(kpX)
+            let dy = tapInImage.y - CGFloat(kpY)
+            if hypot(dx, dy) <= hitRadiusImage {
+                store.cycleKeypointVisibility(instanceId: id, keypointIndex: kpDef.index)
+                cycled = true
+                break
+            }
+        }
+
+        XCTAssertTrue(cycled, "hit-test must detect the dot and call cycleKeypointVisibility")
+        let afterAnn = store.coco.annotations.first(where: { $0.id == id })!
+        XCTAssertEqual(
+            Int(afterAnn.keypoints![2]),
+            KPVisibility.occluded.rawValue,
+            "visible → occluded after one cycle"
+        )
+    }
+
+    /// Verifies that a tap OUTSIDE the hit radius does NOT trigger the cycle path,
+    /// leaving the domain caller free to invoke setKeypoint instead.
+    func test_cycleOnHit_miss_outside_hitRadius_does_not_cycle() {
+        let (store, id) = makeStore()
+        store.setKeypoint(instanceId: id, keypointIndex: 1, x: 200.0, y: 300.0, visibility: .visible)
+
+        let viewSize  = CGSize(width: 390, height: 844)
+        let imageSize = CGSize(width: 1920, height: 1080)
+        let zoom: CGFloat = 1.0
+        let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+        let renderedScale = baseScale * zoom
+        let hitRadiusImage: CGFloat = renderedScale > 0 ? 8.0 / renderedScale : 8.0
+
+        // Tap far away from the dot (distance >> hitRadiusImage).
+        let farTap = CGPoint(x: 500.0, y: 600.0)
+
+        let ann = store.coco.annotations.first(where: { $0.id == id })!
+        let kps = ann.keypoints!
+        var cycled = false
+        for kpDef in KeypointDefinition.all {
+            let off = kpDef.cocoArrayOffset
+            let v = Int(kps[off + 2])
+            guard v > 0 else { continue }
+            let kpX = kps[off]
+            let kpY = kps[off + 1]
+            let dx = farTap.x - CGFloat(kpX)
+            let dy = farTap.y - CGFloat(kpY)
+            if hypot(dx, dy) <= hitRadiusImage {
+                cycled = true
+                break
+            }
+        }
+
+        XCTAssertFalse(cycled, "tap far from dot must not trigger cycle — setKeypoint path runs instead")
+        // Visibility unchanged from initial `.visible`.
+        let afterAnn = store.coco.annotations.first(where: { $0.id == id })!
+        XCTAssertEqual(
+            Int(afterAnn.keypoints![2]),
+            KPVisibility.visible.rawValue,
+            "visibility must remain visible — no cycle occurred"
+        )
+    }
+
+    /// Verifies that a tap within hit radius of a dot whose visibility is `occluded`
+    /// cycles it to `notLabeled` (the third step of the cycle).
+    func test_cycleOnHit_occluded_becomes_notLabeled() {
+        let (store, id) = makeStore()
+        store.setKeypoint(instanceId: id, keypointIndex: 5, x: 100.0, y: 150.0, visibility: .occluded)
+
+        let viewSize  = CGSize(width: 390, height: 844)
+        let imageSize = CGSize(width: 1920, height: 1080)
+        let zoom: CGFloat = 2.0  // zoomed in
+        let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+        let renderedScale = baseScale * zoom
+        let hitRadiusImage: CGFloat = renderedScale > 0 ? 8.0 / renderedScale : 8.0
+
+        // Tap exactly on the dot — distance = 0.
+        let tapInImage = CGPoint(x: 100.0, y: 150.0)
+
+        let ann = store.coco.annotations.first(where: { $0.id == id })!
+        let kps = ann.keypoints!
+        for kpDef in KeypointDefinition.all {
+            let off = kpDef.cocoArrayOffset
+            let v = Int(kps[off + 2])
+            guard v > 0 else { continue }
+            let kpX = kps[off]
+            let kpY = kps[off + 1]
+            let dx = tapInImage.x - CGFloat(kpX)
+            let dy = tapInImage.y - CGFloat(kpY)
+            if hypot(dx, dy) <= hitRadiusImage {
+                store.cycleKeypointVisibility(instanceId: id, keypointIndex: kpDef.index)
+                break
+            }
+        }
+
+        let afterAnn = store.coco.annotations.first(where: { $0.id == id })!
+        let off5 = (5 - 1) * 3
+        XCTAssertEqual(
+            Int(afterAnn.keypoints![off5 + 2]),
+            KPVisibility.notLabeled.rawValue,
+            "occluded → notLabeled after cycle"
+        )
+    }
 }
 
 /// Thread-safe counter for `withObservationTracking` callbacks.
