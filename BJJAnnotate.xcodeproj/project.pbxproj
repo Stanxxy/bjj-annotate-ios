@@ -43,6 +43,7 @@
 		4DE495776A6941B859BDDAC6 /* CocoFileCoordinatorConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6874067E59BF74102183B1C /* CocoFileCoordinatorConflictTests.swift */; };
 		4EC0983501216763E8B58198 /* AnnotatorLifecycleContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D23B6D87ED3ACB810A810A /* AnnotatorLifecycleContext.swift */; };
 		50E35A30022703090ADE3A3A /* AnnotationStoreKeypointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D900163FC17CDEDFE804F9CE /* AnnotationStoreKeypointTests.swift */; };
+		486D97DF86B84D5AA21F5713 /* IsAthleteSelectedGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42C679E49D74B6D8CB6490A /* IsAthleteSelectedGateTests.swift */; };
 		51184A5B3FC62013B680AB6F /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB4EA75497C48A21AD33473 /* JSONValue.swift */; };
 		5A545AA81D1F3044D16381F7 /* JSONValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */; };
 		629646E5466971EE40D5103B /* BookmarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A759C764C3F5391463AE4C /* BookmarkStoreTests.swift */; };
@@ -217,6 +218,7 @@
 		D0F01B4E77F235E16CB1A9CA /* JSONValueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValueTests.swift; sourceTree = "<group>"; };
 		D1D910226AB7B74787989A8E /* ClassChipRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassChipRow.swift; sourceTree = "<group>"; };
 		D900163FC17CDEDFE804F9CE /* AnnotationStoreKeypointTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationStoreKeypointTests.swift; sourceTree = "<group>"; };
+		E42C679E49D74B6D8CB6490A /* IsAthleteSelectedGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsAthleteSelectedGateTests.swift; sourceTree = "<group>"; };
 		DBC1D78DEDE6D0CE5364736A /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		DD76709FDBC9AC402443AD2E /* KeypointPickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeypointPickerViewModel.swift; sourceTree = "<group>"; };
 		DD9C3B0D0816C56BA32F36AD /* ProjectFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFolder.swift; sourceTree = "<group>"; };
@@ -289,6 +291,7 @@
 				5961D296C719E1C1B0E183D8 /* AdaptiveLayoutSizeClassTests.swift */,
 				D900163FC17CDEDFE804F9CE /* AnnotationStoreKeypointTests.swift */,
 				3710ACEE941DF0E88AD7C24A /* AnnotationStoreTests.swift */,
+				E42C679E49D74B6D8CB6490A /* IsAthleteSelectedGateTests.swift */,
 				AE6513949672E3B413C7EFF3 /* AnnotatorCanvasGeometryTests.swift */,
 				A29DA11622EA110EDB8E0F22 /* AnnotatorNavigationContractTests.swift */,
 				B77C7C0E979A6F422F136244 /* AnnotatorViewLifecycleTests.swift */,
@@ -640,6 +643,7 @@
 				4877EF45AF02DD78F9CA0CCC /* AdaptiveLayoutSizeClassTests.swift in Sources */,
 				50E35A30022703090ADE3A3A /* AnnotationStoreKeypointTests.swift in Sources */,
 				A514875F93448DF96D8B567A /* AnnotationStoreTests.swift in Sources */,
+				486D97DF86B84D5AA21F5713 /* IsAthleteSelectedGateTests.swift in Sources */,
 				15E0852D6E153292900B58A8 /* AnnotatorCanvasGeometryTests.swift in Sources */,
 				02AFBE5E573B56C7ACBB3E31 /* AnnotatorNavigationContractTests.swift in Sources */,
 				3F0DC8B28EC039936386F391 /* AnnotatorViewLifecycleTests.swift in Sources */,

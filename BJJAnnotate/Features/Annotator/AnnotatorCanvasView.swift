@@ -137,18 +137,26 @@ struct AnnotatorCanvasView: View {
         // DragGesture(minimumDistance:1) only fires onChanged after ≥1pt of movement,
         // meaning a real-device tap (zero movement) never fires it. SpatialTapGesture
         // fires on lift regardless of movement distance and does NOT fire for drags.
+        //
+        // Double-tap fix: count-2 SpatialTapGesture is registered FIRST so SwiftUI gives
+        // it a chance to succeed before the count-1 recognizer fires. When a double-tap
+        // occurs, the count-2 recognizer wins and the count-1 recognizer is suppressed for
+        // that touch sequence — preventing a spurious keypoint placement on the first lift.
         .simultaneousGesture(
-            SpatialTapGesture()
+            SpatialTapGesture(count: 2)
+                .onEnded { _ in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        transform.doubleTapToFit()
+                    }
+                }
+        )
+        .simultaneousGesture(
+            SpatialTapGesture(count: 1)
                 .onEnded { value in
                     guard tool == .keypoints else { return }
                     onKeypointTap(location: value.location, viewSize: viewSize, imageSize: imageSize)
                 }
         )
-        .onTapGesture(count: 2) {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                transform.doubleTapToFit()
-            }
-        }
     }
 
     /// Returns the live rect for an annotation — if the user is mid-drag on a
