@@ -53,8 +53,6 @@ struct KeypointLayer: View {
                 case .visible:
                     ctx.stroke(path, with: .color(color), lineWidth: 2)
                 case .occluded:
-                    var strokeStyle = StrokeStyle(lineWidth: 2, dash: [3, 3])
-                    _ = strokeStyle
                     // Canvas doesn't expose StrokeStyle dashes directly via ctx.stroke;
                     // use a stroked path instead.
                     let dashedPath = Path { p in
