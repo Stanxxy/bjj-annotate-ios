@@ -175,16 +175,8 @@ struct AnnotatorView: View {
                     VStack(spacing: 0) {
                         toolSelectorRow(store: store)
                         classAndAthleteRow(store: store)
-                        // Phase 2: KeypointPickerView shown when keypoints tool is active.
-                        if tool == .keypoints && isAthleteSelected(store: store) {
-                            Divider()
-                            KeypointPickerView(
-                                store: store,
-                                selectedInstanceId: selectedInstanceId,
-                                pickerVM: keypointPickerVM
-                            )
-                            .frame(maxHeight: 280)
-                        }
+                        // Phase 2: KeypointPickerView is rendered via safeAreaInset on the
+                        // canvas (see canvasRegion), NOT here. The sheet stays compact.
                     }
                     .background(.regularMaterial)
                 }
@@ -204,6 +196,23 @@ struct AnnotatorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .accessibilityElement(children: .contain)
+        // Phase 2 (BUG2 fix): Show the keypoint picker as a canvas inset, NOT inside the
+        // sheet toolbarHeader. The sheet only has the instance list and the compact toolbar
+        // rows; the picker sits directly below the canvas (above the sheet) so the canvas
+        // retains full height minus the picker inset (~260pt). The GeometryReader inside
+        // AnnotatorCanvasView gets the reduced size after the inset, so tap-to-place
+        // coordinate mapping remains correct.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if tool == .keypoints && isAthleteSelected(store: store) {
+                KeypointPickerView(
+                    store: store,
+                    selectedInstanceId: selectedInstanceId,
+                    pickerVM: keypointPickerVM
+                )
+                .frame(maxHeight: 260)
+                .background(.regularMaterial)
+            }
+        }
     }
 
     private func toolSelectorRow(store: AnnotationStore) -> some View {

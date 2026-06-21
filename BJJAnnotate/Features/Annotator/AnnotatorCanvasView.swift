@@ -133,6 +133,17 @@ struct AnnotatorCanvasView: View {
             pinchGesture()
                 .simultaneously(with: combinedDragGesture(viewSize: viewSize, imageSize: imageSize))
         )
+        // Phase 2: SpatialTapGesture owns tap-to-place for the .keypoints tool.
+        // DragGesture(minimumDistance:1) only fires onChanged after ≥1pt of movement,
+        // meaning a real-device tap (zero movement) never fires it. SpatialTapGesture
+        // fires on lift regardless of movement distance and does NOT fire for drags.
+        .simultaneousGesture(
+            SpatialTapGesture()
+                .onEnded { value in
+                    guard tool == .keypoints else { return }
+                    onKeypointTap(location: value.location, viewSize: viewSize, imageSize: imageSize)
+                }
+        )
         .onTapGesture(count: 2) {
             withAnimation(.easeInOut(duration: 0.2)) {
                 transform.doubleTapToFit()
@@ -273,8 +284,8 @@ struct AnnotatorCanvasView: View {
                 case .select:
                     onSelectDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
-                    // Pan only if the gesture has traveled more than 8pt (clear intent to pan).
-                    // Smaller movements are reserved for tap-to-place (handled in onEnded).
+                    // Pan only when the gesture has clearly traveled (>8pt).
+                    // Tap-to-place is handled exclusively by SpatialTapGesture above.
                     let dist = hypot(value.translation.width, value.translation.height)
                     if dist > 8 {
                         transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
@@ -289,10 +300,9 @@ struct AnnotatorCanvasView: View {
                     onSelectDragEnded(viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
                     let dist = hypot(value.translation.width, value.translation.height)
-                    if dist <= 8 {
-                        // Treat as a tap — place the active keypoint.
-                        onKeypointTap(location: value.startLocation, viewSize: viewSize, imageSize: imageSize)
-                    } else {
+                    if dist > 8 {
+                        // Only commit pan for clear drag gestures.
+                        // Tap-to-place is handled by SpatialTapGesture — do nothing here for taps.
                         transform.commitPan()
                     }
                 }
