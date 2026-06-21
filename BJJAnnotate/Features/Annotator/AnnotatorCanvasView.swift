@@ -138,10 +138,10 @@ struct AnnotatorCanvasView: View {
         // meaning a real-device tap (zero movement) never fires it. SpatialTapGesture
         // fires on lift regardless of movement distance and does NOT fire for drags.
         //
-        // Double-tap fix: count-2 SpatialTapGesture is registered FIRST so SwiftUI gives
-        // it a chance to succeed before the count-1 recognizer fires. When a double-tap
-        // occurs, the count-2 recognizer wins and the count-1 recognizer is suppressed for
-        // that touch sequence — preventing a spurious keypoint placement on the first lift.
+        // Double-tap fix: exclusively(before:) is SwiftUI's built-in "try A first; only
+        // run B if A fails" composition. count-2 is tried first; if it succeeds (double-tap),
+        // count-1 is suppressed — no spurious keypoint placement on the first lift.
+        // Single-tap incurs ~300ms disambiguation delay, which is acceptable for annotation.
         .simultaneousGesture(
             SpatialTapGesture(count: 2)
                 .onEnded { _ in
@@ -149,13 +149,13 @@ struct AnnotatorCanvasView: View {
                         transform.doubleTapToFit()
                     }
                 }
-        )
-        .simultaneousGesture(
-            SpatialTapGesture(count: 1)
-                .onEnded { value in
-                    guard tool == .keypoints else { return }
-                    onKeypointTap(location: value.location, viewSize: viewSize, imageSize: imageSize)
-                }
+                .exclusively(before:
+                    SpatialTapGesture(count: 1)
+                        .onEnded { value in
+                            guard tool == .keypoints else { return }
+                            onKeypointTap(location: value.location, viewSize: viewSize, imageSize: imageSize)
+                        }
+                )
         )
     }
 
