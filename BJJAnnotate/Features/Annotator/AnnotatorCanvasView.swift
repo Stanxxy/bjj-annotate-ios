@@ -38,6 +38,8 @@ struct AnnotatorCanvasView: View {
     /// Active resize/move during a `.select`-mode drag. View-local; commits to
     /// store on `.onEnded` only (same R-UI-2 contract as `.box` mode).
     @State private var selectStage: SelectStage? = nil
+    /// Phase 2: keypoint picker view-model. Drives auto-advance after each tap.
+    var keypointPickerVM: KeypointPickerViewModel? = nil
 
     private enum SelectStage: Equatable {
         case resize(instanceId: Int, handle: BoxHandle, originalRect: BBox, liveRect: BBox)
@@ -49,13 +51,15 @@ struct AnnotatorCanvasView: View {
         store: AnnotationStore? = nil,
         tool: AnnotatorTool = .box,
         rejectionToastVisible: Binding<Bool> = .constant(false),
-        selectedInstanceId: Binding<Int?> = .constant(nil)
+        selectedInstanceId: Binding<Int?> = .constant(nil),
+        keypointPickerVM: KeypointPickerViewModel? = nil
     ) {
         self.imageURL = imageURL
         self.store = store
         self.tool = tool
         self._rejectionToastVisible = rejectionToastVisible
         self._selectedInstanceId = selectedInstanceId
+        self.keypointPickerVM = keypointPickerVM
     }
 
     var body: some View {
@@ -97,6 +101,26 @@ struct AnnotatorCanvasView: View {
                    let ann = store.coco.annotations.first(where: { $0.id == id }) {
                     handlesOverlay(rect: liveRect(for: ann), viewSize: viewSize, imageSize: imageSize)
                 }
+
+                // Phase 2: skeleton lines drawn UNDER keypoint dots.
+                SkeletonLayer(
+                    annotations: store.annotationsForCurrentImage,
+                    selectedInstanceId: selectedInstanceId,
+                    transform: transform,
+                    imageSize: imageSize,
+                    viewSize: viewSize
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Phase 2: keypoint dots drawn ABOVE skeleton lines, BELOW handle overlays.
+                KeypointLayer(
+                    annotations: store.annotationsForCurrentImage,
+                    selectedInstanceId: selectedInstanceId,
+                    transform: transform,
+                    imageSize: imageSize,
+                    viewSize: viewSize
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             // Drag-stage preview rectangle — view-local, never in the store.
@@ -249,7 +273,12 @@ struct AnnotatorCanvasView: View {
                 case .select:
                     onSelectDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
-                    transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
+                    // Pan only if the gesture has traveled more than 8pt (clear intent to pan).
+                    // Smaller movements are reserved for tap-to-place (handled in onEnded).
+                    let dist = hypot(value.translation.width, value.translation.height)
+                    if dist > 8 {
+                        transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
+                    }
                 }
             }
             .onEnded { value in
@@ -259,9 +288,33 @@ struct AnnotatorCanvasView: View {
                 case .select:
                     onSelectDragEnded(viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
-                    transform.commitPan()
+                    let dist = hypot(value.translation.width, value.translation.height)
+                    if dist <= 8 {
+                        // Treat as a tap — place the active keypoint.
+                        onKeypointTap(location: value.startLocation, viewSize: viewSize, imageSize: imageSize)
+                    } else {
+                        transform.commitPan()
+                    }
                 }
             }
+    }
+
+    // MARK: - .keypoints tap path (Phase 2)
+
+    /// Converts a tap location to image coordinates and places the active keypoint.
+    private func onKeypointTap(location: CGPoint, viewSize: CGSize, imageSize: CGSize) {
+        guard let store = store,
+              let pickerVM = keypointPickerVM,
+              let instanceId = selectedInstanceId else { return }
+        let imgPt = transform.viewToImage(viewPoint: location, viewSize: viewSize, imageSize: imageSize)
+        store.setKeypoint(
+            instanceId: instanceId,
+            keypointIndex: pickerVM.activeKeypointIndex,
+            x: imgPt.x,
+            y: imgPt.y,
+            visibility: .visible
+        )
+        pickerVM.advance(in: store.annotationsForCurrentImage, for: instanceId)
     }
 
     // MARK: - .box gesture path

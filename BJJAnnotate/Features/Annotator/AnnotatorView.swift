@@ -38,6 +38,7 @@ struct AnnotatorView: View {
     @State private var selectedInstanceId: Int? = nil
     @State private var isPickerShowing: Bool = false
     @State private var isListShowing: Bool = false
+    @State private var keypointPickerVM = KeypointPickerViewModel()
 
     // I1: per-project lifecycle context. nil while loading on appear.
     @State private var context: AnnotatorLifecycleContext? = nil
@@ -172,8 +173,18 @@ struct AnnotatorView: View {
                 selectedId: $selectedInstanceId,
                 toolbarHeader: {
                     VStack(spacing: 0) {
-                        toolSelectorRow
+                        toolSelectorRow(store: store)
                         classAndAthleteRow(store: store)
+                        // Phase 2: KeypointPickerView shown when keypoints tool is active.
+                        if tool == .keypoints && isAthleteSelected(store: store) {
+                            Divider()
+                            KeypointPickerView(
+                                store: store,
+                                selectedInstanceId: selectedInstanceId,
+                                pickerVM: keypointPickerVM
+                            )
+                            .frame(maxHeight: 280)
+                        }
                     }
                     .background(.regularMaterial)
                 }
@@ -187,18 +198,19 @@ struct AnnotatorView: View {
             store: store,
             tool: tool,
             rejectionToastVisible: $rejectionToastVisible,
-            selectedInstanceId: $selectedInstanceId
+            selectedInstanceId: $selectedInstanceId,
+            keypointPickerVM: keypointPickerVM
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .accessibilityElement(children: .contain)
     }
 
-    private var toolSelectorRow: some View {
+    private func toolSelectorRow(store: AnnotationStore) -> some View {
         HStack(spacing: 8) {
             toolButton(.select, systemImage: "cursorarrow", label: "Select")
             toolButton(.box, systemImage: "square.dashed", label: "Box")
-            keypointsButton
+            keypointsButton(store: store)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -226,34 +238,43 @@ struct AnnotatorView: View {
         .accessibilityIdentifier("Annotator.Tool.\(label)")
     }
 
-    private var keypointsButton: some View {
-        Button {
-            // No-op (AC #9: disabled).
+    /// Keypoints tool button — enabled only when the selected instance is an athlete
+    /// (not a referee). When no instance is selected or the selected instance is a
+    /// referee, the button is disabled and shows a tooltip.
+    private func keypointsButton(store: AnnotationStore) -> some View {
+        let isEnabled = isAthleteSelected(store: store)
+        let isActive = tool == .keypoints
+        return Button {
+            guard isEnabled else { return }
+            tool = .keypoints
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: "figure.stand")
                     .font(.system(size: 18))
                 Text("Keypts")
                     .font(.caption2)
-                // "P2" badge.
-                Text("P2")
-                    .font(.caption2)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.accentColor.opacity(0.7))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
             }
             .frame(minWidth: 60, minHeight: 44)
-            .foregroundStyle(Color.primary)
-            .opacity(0.4)
+            .foregroundStyle(isActive ? Color.accentColor : (isEnabled ? Color.primary : Color.primary))
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isActive ? Color.accentColor.opacity(0.12) : Color.clear)
+            )
+            .opacity(isEnabled ? 1.0 : 0.4)
         }
         .buttonStyle(.plain)
-        .disabled(true)
-        .accessibilityLabel("Keypoints, disabled")
-        .accessibilityHint("Phase 2 feature.")
+        .disabled(!isEnabled)
+        .accessibilityLabel(isEnabled ? "Keypoints" : "Keypoints, select an athlete first")
         .accessibilityIdentifier("Annotator.Tool.Keypoints")
-        .help(LockedCopy.keypointsDisabledTooltip)
+        .help(isEnabled ? "" : LockedCopy.keypointsDisabledTooltip)
+    }
+
+    private func isAthleteSelected(store: AnnotationStore) -> Bool {
+        guard let id = selectedInstanceId,
+              let ann = store.coco.annotations.first(where: { $0.id == id }) else {
+            return false
+        }
+        return ann.category_id != ClassCategory.ref.rawValue
     }
 
     private func classAndAthleteRow(store: AnnotationStore) -> some View {
@@ -271,6 +292,12 @@ struct AnnotatorView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .accessibilityIdentifier("Annotator.ClassAndAthleteRow")
+        // Phase 2: if the selected instance becomes referee, exit keypoints tool.
+        .onChange(of: selectedInstanceId) { _, _ in
+            if tool == .keypoints && !isAthleteSelected(store: store) {
+                tool = .select
+            }
+        }
     }
 
     private func isRefSelected(store: AnnotationStore) -> Bool {

@@ -249,6 +249,112 @@ final class AnnotationStore {
         coco = next
         scheduler.scheduleWrite(coco)
     }
+
+    // MARK: - Phase 2 Keypoint Mutations
+
+    /// Places or updates a single keypoint for an athlete instance.
+    ///
+    /// - Parameters:
+    ///   - instanceId: The annotation instance id.
+    ///   - keypointIndex: 1-based keypoint index (1 = nose … 17 = right_ankle).
+    ///   - x: x coordinate in image pixel space.
+    ///   - y: y coordinate in image pixel space.
+    ///   - visibility: `KPVisibility` state to record.
+    ///
+    /// Silently ignores referee instances (category_id == 3).
+    /// Ensures keypoints array is always 51 elements when non-nil.
+    func setKeypoint(instanceId: Int, keypointIndex: Int, x: Double, y: Double, visibility: KPVisibility) {
+        var next = coco
+        guard let idx = next.annotations.firstIndex(where: { $0.id == instanceId }) else { return }
+        // Refuse to place keypoints on referee instances.
+        guard next.annotations[idx].category_id != ClassCategory.ref.rawValue else { return }
+        // Validate keypoint index.
+        guard keypointIndex >= 1, keypointIndex <= 17 else { return }
+
+        // Ensure the keypoints array is exactly 51 elements.
+        var kps = next.annotations[idx].keypoints ?? []
+        if kps.count != 51 { kps = Array(repeating: 0.0, count: 51) }
+
+        let offset = (keypointIndex - 1) * 3
+        kps[offset]     = x
+        kps[offset + 1] = y
+        kps[offset + 2] = Double(visibility.rawValue)
+
+        next.annotations[idx].keypoints = kps
+        next.annotations[idx].num_keypoints = Self.countPlacedKeypoints(kps)
+
+        // MARK: Undo registration site (Phase 4 hook)
+        coco = next
+        scheduler.scheduleWrite(coco)
+    }
+
+    /// Cycles the visibility of an already-placed keypoint:
+    /// `notLabeled → visible → occluded → notLabeled`.
+    ///
+    /// If the keypoint is `notLabeled` (not placed), cycles to `visible` with
+    /// the coordinates preserved (0,0 if not previously set). Silently ignores
+    /// referee instances.
+    func cycleKeypointVisibility(instanceId: Int, keypointIndex: Int) {
+        var next = coco
+        guard let idx = next.annotations.firstIndex(where: { $0.id == instanceId }) else { return }
+        guard next.annotations[idx].category_id != ClassCategory.ref.rawValue else { return }
+        guard keypointIndex >= 1, keypointIndex <= 17 else { return }
+
+        var kps = next.annotations[idx].keypoints ?? []
+        if kps.count != 51 { kps = Array(repeating: 0.0, count: 51) }
+
+        let offset = (keypointIndex - 1) * 3
+        let currentVis = KPVisibility(rawValue: Int(kps[offset + 2])) ?? .notLabeled
+        let nextVis: KPVisibility
+        switch currentVis {
+        case .notLabeled: nextVis = .visible
+        case .visible:    nextVis = .occluded
+        case .occluded:   nextVis = .notLabeled
+        }
+        kps[offset + 2] = Double(nextVis.rawValue)
+
+        next.annotations[idx].keypoints = kps
+        next.annotations[idx].num_keypoints = Self.countPlacedKeypoints(kps)
+
+        // MARK: Undo registration site (Phase 4 hook)
+        coco = next
+        scheduler.scheduleWrite(coco)
+    }
+
+    /// Mirrors all 8 L↔R keypoint pairs for the given athlete instance.
+    ///
+    /// Visibility flags travel with the position (if the left shoulder was
+    /// `occluded`, after mirror the swapped right-shoulder slot is also `occluded`).
+    /// No-op if the instance is a referee.
+    func mirrorKeypoints(instanceId: Int) {
+        var next = coco
+        guard let idx = next.annotations.firstIndex(where: { $0.id == instanceId }) else { return }
+        guard next.annotations[idx].category_id != ClassCategory.ref.rawValue else { return }
+
+        var kps = next.annotations[idx].keypoints ?? []
+        if kps.count != 51 { kps = Array(repeating: 0.0, count: 51) }
+
+        next.annotations[idx].keypoints = KeypointMirror.mirror(kps)
+        // num_keypoints count is unchanged by mirroring (same set of placed points).
+
+        // MARK: Undo registration site (Phase 4 hook)
+        coco = next
+        scheduler.scheduleWrite(coco)
+    }
+
+    // MARK: - Private helpers
+
+    /// Counts keypoints whose visibility is NOT `notLabeled` (raw value > 0).
+    /// Operates on a 51-element flat array; stride of 3 reads every visibility slot.
+    private static func countPlacedKeypoints(_ kps: [Double]) -> Int {
+        var count = 0
+        var i = 2
+        while i < kps.count {
+            if kps[i] > 0 { count += 1 }
+            i += 3
+        }
+        return count
+    }
 }
 
 /// Conflict event published by the file coordinator (T10). Phase 1 carries only

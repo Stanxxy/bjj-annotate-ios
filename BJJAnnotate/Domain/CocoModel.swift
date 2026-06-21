@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// COCO Keypoints 1.0 document with the BJJAnnotate `bjj_annotate_meta` extension.
 /// THIS IS THE WORKING FORMAT — there is NO separate internal representation that
@@ -161,4 +162,81 @@ struct ImageState: Codable, Equatable {
 
 struct MetaSettings: Codable, Equatable {
     var sticky_category_id: Int
+}
+
+// MARK: - Phase 2 Keypoint Types
+
+/// COCO visibility flag for a single keypoint.
+/// Raw value matches the COCO spec: 0 = not labeled, 1 = occluded, 2 = visible.
+enum KPVisibility: Int, Codable, Equatable {
+    /// Not placed — no dot drawn, x/y are 0.0 in the flat array.
+    case notLabeled = 0
+    /// Placed but occluded — rendered as a dashed ring.
+    case occluded = 1
+    /// Placed and visible — rendered as a solid ring.
+    case visible = 2
+}
+
+/// Which side of the body a keypoint belongs to.
+enum KPSide: Equatable {
+    case left
+    case right
+    case center
+}
+
+/// Describes one COCO keypoint: its 1-based index, display name, and body side.
+struct KeypointDefinition: Equatable {
+    /// 1-based index matching the COCO spec (1 = nose … 17 = right_ankle).
+    let index: Int
+    let name: String
+    let side: KPSide
+
+    /// Byte offset into the flat 51-element keypoints array for this point's x value.
+    /// y is at `cocoArrayOffset + 1`, visibility at `cocoArrayOffset + 2`.
+    var cocoArrayOffset: Int { (index - 1) * 3 }
+
+    // MARK: All 17 COCO keypoints in order
+    static let all: [KeypointDefinition] = [
+        KeypointDefinition(index: 1,  name: "Nose",           side: .center),
+        KeypointDefinition(index: 2,  name: "Left Eye",       side: .left),
+        KeypointDefinition(index: 3,  name: "Right Eye",      side: .right),
+        KeypointDefinition(index: 4,  name: "Left Ear",       side: .left),
+        KeypointDefinition(index: 5,  name: "Right Ear",      side: .right),
+        KeypointDefinition(index: 6,  name: "Left Shoulder",  side: .left),
+        KeypointDefinition(index: 7,  name: "Right Shoulder", side: .right),
+        KeypointDefinition(index: 8,  name: "Left Elbow",     side: .left),
+        KeypointDefinition(index: 9,  name: "Right Elbow",    side: .right),
+        KeypointDefinition(index: 10, name: "Left Wrist",     side: .left),
+        KeypointDefinition(index: 11, name: "Right Wrist",    side: .right),
+        KeypointDefinition(index: 12, name: "Left Hip",       side: .left),
+        KeypointDefinition(index: 13, name: "Right Hip",      side: .right),
+        KeypointDefinition(index: 14, name: "Left Knee",      side: .left),
+        KeypointDefinition(index: 15, name: "Right Knee",     side: .right),
+        KeypointDefinition(index: 16, name: "Left Ankle",     side: .left),
+        KeypointDefinition(index: 17, name: "Right Ankle",    side: .right),
+    ]
+
+    // MARK: Picker groups
+    static var headGroup: [KeypointDefinition]  { all.filter { $0.index <= 5 } }
+    static var armsGroup: [KeypointDefinition]  { all.filter { $0.index >= 6 && $0.index <= 11 } }
+    static var legsGroup: [KeypointDefinition]  { all.filter { $0.index >= 12 } }
+}
+
+/// Single source of truth for all keypoint rendering colors.
+/// Constraint: NO other file may hardcode a keypoint color — always call this.
+enum KeypointPalette {
+    /// Color for left-side keypoints.
+    static let left: Color = .cyan
+    /// Color for right-side keypoints.
+    static let right: Color = .orange
+    /// Color for center keypoints (e.g. nose).
+    static let center: Color = .white
+
+    static func color(for side: KPSide) -> Color {
+        switch side {
+        case .left:   return left
+        case .right:  return right
+        case .center: return center
+        }
+    }
 }

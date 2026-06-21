@@ -60,6 +60,14 @@ targets:
         type: folder
         buildPhase: resources
         name: ProductionSources_Domain
+      - path: BJJAnnotate/Features/Annotator/Canvas
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Canvas
+      - path: BJJAnnotate/Features/Annotator/KeypointPicker
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_KeypointPicker
     dependencies:
       - target: BJJAnnotate
     settings:
