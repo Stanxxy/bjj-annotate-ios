@@ -9,8 +9,8 @@ import SwiftUI
 /// - Does NOT draw for referee instances (caller guards category_id).
 ///
 /// Dot size: 10pt diameter circle.
-/// Visibility ring: solid stroke for `.visible`, dashed stroke for `.occluded`.
-/// No dot for `.notLabeled`.
+/// Visibility ring: solid stroke for `.visible`, dashed stroke for `.occluded`, no ring for `.notLabeled`.
+/// `.notLabeled` with non-zero coords: dimmed fill (0.25 opacity) + badge — tappable but visually distinct.
 /// Badge: small Text overlay with keypoint index, 8pt font, black foreground.
 struct KeypointLayer: View {
 
@@ -29,11 +29,14 @@ struct KeypointLayer: View {
 
             for kpDef in KeypointDefinition.all {
                 let offset = kpDef.cocoArrayOffset
+                let kpX = kps[offset]
+                let kpY = kps[offset + 1]
                 let visRaw = Int(kps[offset + 2])
-                guard let vis = KPVisibility(rawValue: visRaw), vis != .notLabeled else { continue }
+                guard let vis = KPVisibility(rawValue: visRaw) else { continue }
+                // Skip unplaced keypoints: v=0 at origin means never annotated.
+                if vis == .notLabeled && kpX == 0 && kpY == 0 { continue }
 
-                let imgPt = CGPoint(x: kps[offset], y: kps[offset + 1])
-                let viewPt = imageToView(imgPt)
+                let viewPt = imageToView(CGPoint(x: kpX, y: kpY))
                 let dotRadius: CGFloat = 5.0
                 let dotRect = CGRect(
                     x: viewPt.x - dotRadius,
@@ -45,21 +48,18 @@ struct KeypointLayer: View {
                 let color = KeypointPalette.color(for: kpDef.side)
                 let path = Path(ellipseIn: dotRect)
 
-                // Fill with semi-transparent color so the image shows through.
-                ctx.fill(path, with: .color(color.opacity(0.6)))
+                // .notLabeled: dimmed fill so the dot is visible and tappable.
+                // .visible / .occluded: standard 0.6-opacity fill.
+                let fillOpacity: CGFloat = vis == .notLabeled ? 0.25 : 0.6
+                ctx.fill(path, with: .color(color.opacity(fillOpacity)))
 
-                // Stroke ring: solid for visible, dashed for occluded.
+                // Stroke ring: solid for visible, dashed for occluded, none for not-labeled.
                 switch vis {
                 case .visible:
                     ctx.stroke(path, with: .color(color), lineWidth: 2)
                 case .occluded:
-                    // Canvas doesn't expose StrokeStyle dashes directly via ctx.stroke;
-                    // use a stroked path instead.
-                    let dashedPath = Path { p in
-                        p.addEllipse(in: dotRect)
-                    }
                     ctx.stroke(
-                        dashedPath,
+                        Path { p in p.addEllipse(in: dotRect) },
                         with: .color(color),
                         style: StrokeStyle(lineWidth: 2, dash: [3, 3])
                     )
@@ -67,7 +67,7 @@ struct KeypointLayer: View {
                     break
                 }
 
-                // Index badge drawn as resolved text on top.
+                // Index badge always shown.
                 let badge = Text("\(kpDef.index)")
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color.black)

@@ -17,18 +17,31 @@ struct KeypointPickerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Interaction hint — always visible so annotators know the gesture model.
+            Text("Tap: place  ·  Tap dot: cycle visibility  ·  Drag dot: reposition")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
+            // Mirror button above the list so it stays in the zone visible above
+            // the collapsed sheet. Previously in List.safeAreaInset(edge: .bottom),
+            // but that placed it at y≈772 which is underneath the sheet overlay.
+            mirrorButton
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+
+            Divider()
+
             List {
                 section(title: "Head",  definitions: KeypointDefinition.headGroup)
                 section(title: "Arms",  definitions: KeypointDefinition.armsGroup)
                 section(title: "Legs",  definitions: KeypointDefinition.legsGroup)
             }
             .listStyle(.insetGrouped)
-
-            Divider()
-
-            mirrorButton
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
         }
     }
 
