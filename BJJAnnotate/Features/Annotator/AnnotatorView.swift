@@ -148,6 +148,9 @@ struct AnnotatorView: View {
         let coordinator = ctx.coordinator
         return ZStack {
             // Conflict banner (I2: wired from store.lastConflict).
+            // ErrorBanner (I2: wired from store.lastError).
+            // Both are @ObservedObject child views so they re-render reactively on
+            // every @Published change — both appear-on-error and disappear-on-dismiss.
             conflictBannerIfNeeded(store: store)
 
             annotatorLayout(store: store, coordinator: coordinator)
@@ -160,11 +163,10 @@ struct AnnotatorView: View {
                 conflictWatcher?.receive(conflictEvent: event)
             }
         }
-        // Surface store.lastError as a banner.
+        // Surface store.lastError via ErrorBanner — an @ObservedObject child view
+        // that re-renders on every lastError change (appear AND dismiss).
         .overlay(alignment: .top) {
-            if let err = store.lastError {
-                errorBanner(error: err, store: store)
-            }
+            ErrorBanner(store: store)
         }
     }
 
@@ -818,39 +820,6 @@ struct AnnotatorView: View {
         }
     }
 
-    // MARK: - Error banner
-
-    private func errorBanner(error: AnnotationStoreError, store: AnnotationStore) -> some View {
-        HStack {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-            Text(errorMessage(for: error))
-                .font(.callout)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button {
-                store.clearLastError()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground))
-        .accessibilityIdentifier("Annotator.ErrorBanner")
-    }
-
-    private func errorMessage(for error: AnnotationStoreError) -> String {
-        switch error {
-        case .icloudMaterializationTimeout:
-            return LockedCopy.icloudWaitingBanner
-        case .decodeFailed, .readFailed:
-            return "Could not load annotations — showing empty state."
-        case .encodeFailed, .writeFailed:
-            return "Could not save annotations — your changes may be lost."
-        }
-    }
 }
 
 // MARK: - Share sheet helper
