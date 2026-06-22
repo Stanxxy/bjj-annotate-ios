@@ -308,36 +308,52 @@ struct AnnotatorCanvasView: View {
     private func combinedDragGesture(viewSize: CGSize, imageSize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 1)
             .onChanged { value in
-                // Lock guard: route everything to pan when locked.
-                if isViewLocked {
+                // Compute whether the start point hits a keypoint dot (keypoints tool only).
+                let hitsKP: Bool = {
+                    guard tool == .keypoints else { return false }
+                    let startImg = transform.viewToImage(viewPoint: value.startLocation, viewSize: viewSize, imageSize: imageSize)
+                    return keypointHitTest(at: startImg, viewSize: viewSize, imageSize: imageSize) != nil
+                }()
+                switch DragLockDispatch.route(isViewLocked: isViewLocked, tool: tool, startHitsKeypoint: hitsKP) {
+                case .pan:
                     let dist = hypot(value.translation.width, value.translation.height)
                     if dist > 8 {
                         transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
                     }
-                    return
-                }
-                switch tool {
-                case .box:
-                    onBoxDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
-                case .select:
-                    onSelectDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
-                case .keypoints:
+                case .edit:
+                    switch tool {
+                    case .box:
+                        onBoxDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
+                    case .select:
+                        onSelectDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
+                    case .keypoints:
+                        onKeypointDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
+                    }
+                case .repositionKeypoint:
                     onKeypointDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 }
             }
             .onEnded { value in
-                // Lock guard: commit pan on end when locked.
-                if isViewLocked {
+                // Compute hitsKP on end too (mirrors onChanged logic).
+                let hitsKP: Bool = {
+                    guard tool == .keypoints else { return false }
+                    let startImg = transform.viewToImage(viewPoint: value.startLocation, viewSize: viewSize, imageSize: imageSize)
+                    return keypointHitTest(at: startImg, viewSize: viewSize, imageSize: imageSize) != nil
+                }()
+                switch DragLockDispatch.route(isViewLocked: isViewLocked, tool: tool, startHitsKeypoint: hitsKP) {
+                case .pan:
                     let dist = hypot(value.translation.width, value.translation.height)
                     if dist > 8 { transform.commitPan() }
-                    return
-                }
-                switch tool {
-                case .box:
-                    onBoxDragEnded(value: value, viewSize: viewSize, imageSize: imageSize)
-                case .select:
-                    onSelectDragEnded(viewSize: viewSize, imageSize: imageSize)
-                case .keypoints:
+                case .edit:
+                    switch tool {
+                    case .box:
+                        onBoxDragEnded(value: value, viewSize: viewSize, imageSize: imageSize)
+                    case .select:
+                        onSelectDragEnded(viewSize: viewSize, imageSize: imageSize)
+                    case .keypoints:
+                        onKeypointDragEnded(value: value)
+                    }
+                case .repositionKeypoint:
                     onKeypointDragEnded(value: value)
                 }
             }
@@ -414,8 +430,8 @@ struct AnnotatorCanvasView: View {
     /// by the current rendered scale (baseScale × zoom). This keeps the on-screen
     /// touch target constant regardless of zoom level.
     private func onKeypointTap(location: CGPoint, viewSize: CGSize, imageSize: CGSize) {
-        // Lock guard: taps place/cycle nothing while locked.
-        guard !isViewLocked else { return }
+        // Lock guard: taps place/cycle nothing while locked (via DragLockDispatch seam).
+        guard DragLockDispatch.keypointTapShouldProceed(isViewLocked: isViewLocked) else { return }
         guard let store = store,
               let pickerVM = keypointPickerVM,
               let instanceId = selectedInstanceId else { return }

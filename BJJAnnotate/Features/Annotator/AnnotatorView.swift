@@ -573,10 +573,36 @@ private struct ActivitySharePresenter: UIViewControllerRepresentable {
         // .background() is too low in the hierarchy on iOS 26 — present() returns
         // silently without showing the sheet.
         guard let presenter = Self.topPresenter() else { return }
-        guard presenter.presentedViewController == nil else { return }
+
+        // Swallowed-tap hardening: the annotator's bottom sheet is always presented.
+        // If the topmost VC already has a presentedViewController it may be:
+        //   (A) UIActivityViewController — already open; this is a re-entrant update,
+        //       nothing to do (completionHandler resets isPresented on close).
+        //   (B) Some other VC mid-transition (sheet animating in/out) — the naive
+        //       guard would make the tap a silent no-op with isPresented stuck true.
+        //       Fix: retry on the next runloop so the transition settles first.
+        if let existing = presenter.presentedViewController {
+            if existing is UIActivityViewController {
+                // Already showing — ignore duplicate update.
+                return
+            }
+            // Mid-transition: retry after the current run-loop pass completes.
+            DispatchQueue.main.async {
+                guard isPresented else { return }
+                Self.presentActivity(url: url, from: presenter, isPresented: $isPresented)
+            }
+            return
+        }
+
+        Self.presentActivity(url: url, from: presenter, isPresented: $isPresented)
+    }
+
+    /// Creates and presents UIActivityViewController from `presenter`. Separated so
+    /// both the direct and retry paths share the same popover-anchor logic.
+    private static func presentActivity(url: URL, from presenter: UIViewController, isPresented: Binding<Bool>) {
         let activity = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         activity.completionWithItemsHandler = { _, _, _, _ in
-            isPresented = false
+            isPresented.wrappedValue = false
         }
         // iPad: anchor popover to the top-right of the presenter's view.
         if let popover = activity.popoverPresentationController {
@@ -592,7 +618,9 @@ private struct ActivitySharePresenter: UIViewControllerRepresentable {
     }
 
     /// Walks the presented-VC chain from the key window's rootViewController to
-    /// find the topmost visible controller.
+    /// find the topmost visible controller. Skips VCs that are still mid-transition
+    /// (isBeingPresented or isBeingDismissed) to avoid presenting into an unstable
+    /// hierarchy — the retry path in updateUIViewController handles those cases.
     private static func topPresenter() -> UIViewController? {
         let scene = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
@@ -601,7 +629,10 @@ private struct ActivitySharePresenter: UIViewControllerRepresentable {
             return nil
         }
         var top: UIViewController = root
-        while let next = top.presentedViewController { top = next }
+        while let next = top.presentedViewController,
+              !next.isBeingDismissed {
+            top = next
+        }
         return top
     }
 
