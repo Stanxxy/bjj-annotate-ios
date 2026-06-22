@@ -2,8 +2,9 @@ import Foundation
 
 /// Pure value-type L↔R keypoint mirror.
 ///
-/// No UI dependencies, no @Observable. Operates entirely on the flat 51-element
-/// COCO keypoints array (`[x, y, v, x, y, v, ...]` for 17 keypoints).
+/// No UI dependencies, no `ObservableObject`/`@Published` (pure value type with no
+/// observation machinery — a struct with only static methods). Operates entirely on
+/// the flat 51-element COCO keypoints array (`[x, y, v, x, y, v, ...]` for 17 keypoints).
 ///
 /// Contract: `mirror(mirror(x)) == x` — the operation is an involution.
 /// Nose (index 1) is center and is never swapped.

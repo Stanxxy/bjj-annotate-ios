@@ -15,7 +15,7 @@ struct ProjectListRow: Identifiable, Equatable {
     let lastOpenedAt: Date      // canonical sort key (independent of state)
 }
 
-/// `@Observable` view model for `RootView` / `ProjectListView`.
+/// `ObservableObject`/`@Published` view model for `RootView` / `ProjectListView`.
 ///
 /// - Re-derives display names from `BookmarkStore.resolve(id:)` on `refresh()` — never caches
 ///   names (PM Marker D).

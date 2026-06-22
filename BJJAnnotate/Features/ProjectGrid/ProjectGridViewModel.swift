@@ -7,9 +7,9 @@ enum ProjectGridState: Equatable {
     case error(String)
 }
 
-/// `@Observable` view model for `ProjectGridView`. Holds the resolved folder URL and the scan
-/// result. AIP §3: scan is sync `throws` but called from a detached task to keep the main
-/// actor responsive.
+/// `ObservableObject`/`@Published` view model for `ProjectGridView`. Holds the resolved folder URL
+/// and the scan result. AIP §3: scan is sync `throws` but called from a detached task to keep
+/// the main actor responsive.
 ///
 /// Finding #6: `displayName` is a STORED property set once during `load()`. It is NOT a
 /// computed property that re-resolves the bookmark on every render — that pattern triggered

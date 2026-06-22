@@ -7,7 +7,8 @@ import SwiftUI
 /// view is in the navigation stack. The watcher is passed to `ProjectGridView` (conflict
 /// banner, AC #34). `AnnotatorView` receives `conflictWatcher: nil` in Phase 1 because
 /// SwiftUI NavigationStack sibling destinations cannot directly share @State. Phase 2
-/// will thread the watcher via a NavigationStack-level @Observable environment injection.
+/// will thread the watcher via a NavigationStack-level `@ObservedObject` environment
+/// injection (all stores are `ObservableObject`/`@Published` after iOS 16 refactor).
 struct RootView: View {
     @StateObject var listViewModel: ProjectListViewModel
     let thumbnailCache: ThumbnailCache

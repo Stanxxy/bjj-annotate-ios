@@ -85,8 +85,8 @@ struct SystemBookmarkResolver: BookmarkResolving {
 
 /// MRU-ordered store of security-scoped folder bookmarks, persisted via injected `UserDefaults`.
 ///
-/// AIP §1 (bookmark key strategy) + §2 (`@Observable`). The store does NOT cache resolved URLs
-/// or display names — those are derived at render time from `resolve(id:)`.
+/// AIP §1 (bookmark key strategy) + §2 (`ObservableObject`/`@Published`). The store does NOT
+/// cache resolved URLs or display names — those are derived at render time from `resolve(id:)`.
 @MainActor
 final class BookmarkStore: ObservableObject {
     private let defaults: UserDefaults
