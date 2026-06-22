@@ -40,7 +40,7 @@ final class ProjectListViewModel: ObservableObject {
     /// N bookmarks; `ProjectGridViewModel.load()` resolving a single bookmark on the main actor
     /// is NOT a workable mirror here).
     ///
-    /// But `resolve(id:)` ALSO mutates the `@Observable` store (`replace` UserDefaults write +
+    /// But `resolve(id:)` ALSO mutates the `ObservableObject` store (`replace` UserDefaults write +
     /// `lastError`), and the store has no synchronization — calling it off-main while
     /// `touchOpened()` mutates the same store on the main actor is a data race. So we split the
     /// work along the grid VM's actual philosophy (offload *value* work, mutate *state* on the

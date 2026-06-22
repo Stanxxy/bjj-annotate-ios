@@ -210,7 +210,7 @@ final class BookmarkStore: ObservableObject {
     /// Value-type outcome of resolving a single bookmark blob WITHOUT mutating any store state.
     ///
     /// BUG B / Finding #3 (data race): `ProjectListViewModel.refresh()` resolves N bookmarks off
-    /// the main actor. `resolve(id:)` mutates the `@Observable` store (`replace` UserDefaults
+    /// the main actor. `resolve(id:)` mutates the `ObservableObject` store (`replace` UserDefaults
     /// write + `lastError`), which is unsafe from a background thread. So the heavy I/O
     /// (`URL(resolvingBookmarkData:)`, re-mint, existence/dir gates) runs in `resolvePure` and
     /// returns this value type; the caller applies the persistence + error side effects back on
@@ -235,7 +235,7 @@ final class BookmarkStore: ObservableObject {
 
     /// Pure (no-`self`-mutation) bookmark resolution. Safe to call from a detached/background
     /// task: it touches only the injected `resolver` (a value/seam) and `FileManager`, never the
-    /// store's `@Observable` state. All BUG A rename-recovery logic is preserved here; the only
+    /// store's `ObservableObject` (`@Published`) state. All BUG A rename-recovery logic is preserved here; the only
     /// difference from `resolve(id:)` is that the persistence (`replace`) and `lastError` side
     /// effects are RETURNED as values for the main actor to apply, instead of mutated inline.
     nonisolated static func resolvePure(data: Data, resolver: BookmarkResolving) -> PureResolution {
