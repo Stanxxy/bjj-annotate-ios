@@ -5,9 +5,12 @@ import Observation
 /// auto-advances to the next unplaced point after each tap.
 ///
 /// Active-point advance logic (spec):
-/// - After placing a keypoint, advance to the next unplaced point within the
-///   same group (Head / Arms / Legs). If all points in the current group are
-///   placed, stay on the last point of that group.
+/// - Scan forward from current+1 within the group for the next unplaced point.
+/// - If current is at the group end, wrap and scan from the group start (catches
+///   skipped rows in out-of-order placement per US-3).
+/// - If the entire group is placed, stay on the last point of that group.
+///   (Cross-group advance is NOT performed — the picker stays within the active
+///   group until the user explicitly selects a different group row.)
 /// - Groups: Head = 1–5, Arms = 6–11, Legs = 12–17.
 @Observable
 final class KeypointPickerViewModel {
@@ -43,15 +46,28 @@ final class KeypointPickerViewModel {
 
         let group = Self.group(for: activeKeypointIndex)
 
-        // Scan forward from the current index + 1 to the end of the group.
-        for candidate in (activeKeypointIndex + 1)...group.upperBound {
-            if candidate > 17 { break }
-            if !isPlaced(index: candidate, in: kps) {
+        // Phase 1: scan forward within the group from current+1.
+        // Guard required: if active is already at upperBound, (active+1)...upperBound
+        // would be an invalid range (lowerBound > upperBound) and crash.
+        let scanStart = activeKeypointIndex + 1
+        if scanStart <= group.upperBound {
+            for candidate in scanStart...group.upperBound where !isPlaced(index: candidate, in: kps) {
                 activeKeypointIndex = candidate
                 return
             }
         }
-        // If all remaining points in the group are placed, stay on the last.
+
+        // Phase 2: wrap-around scan from the group start to catch skipped rows
+        // (handles out-of-order placement per US-3: skip row 4, place row 5 →
+        // next active is row 4, not row 6).
+        for candidate in group.lowerBound...group.upperBound where !isPlaced(index: candidate, in: kps) {
+            activeKeypointIndex = candidate
+            return
+        }
+
+        // Current group fully placed — stay on the last point of current group.
+        // Cross-group advance is intentionally omitted: the picker stays within
+        // the active group until the user taps a different group row.
         activeKeypointIndex = group.upperBound
     }
 

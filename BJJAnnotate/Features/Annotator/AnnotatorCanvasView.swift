@@ -26,6 +26,10 @@ struct AnnotatorCanvasView: View {
     /// Currently-active tool. Owned by the parent `AnnotatorView` so the
     /// toolbar / chips remain a single source of truth.
     var tool: AnnotatorTool = .box
+    /// View-lock flag. When true, ALL single-finger drags are routed to pan
+    /// regardless of the active tool, and keypoint taps place nothing.
+    /// Pinch-zoom and double-tap-to-fit always work regardless of lock state.
+    var isViewLocked: Bool = false
     /// Locked toast surface — populated when a sub-4px drag is rejected so the
     /// parent view can render `LockedCopy.boxTooSmallToast`.
     @Binding var rejectionToastVisible: Bool
@@ -38,6 +42,9 @@ struct AnnotatorCanvasView: View {
     /// Active resize/move during a `.select`-mode drag. View-local; commits to
     /// store on `.onEnded` only (same R-UI-2 contract as `.box` mode).
     @State private var selectStage: SelectStage? = nil
+    /// Phase 2: whether a keypoints drag is repositioning a dot or panning.
+    /// nil until the first onChanged event for the current drag.
+    @State private var keypointDragState: KeypointDragState? = nil
     /// Phase 2: keypoint picker view-model. Drives auto-advance after each tap.
     var keypointPickerVM: KeypointPickerViewModel? = nil
 
@@ -46,10 +53,18 @@ struct AnnotatorCanvasView: View {
         case move(instanceId: Int, originalRect: BBox, liveRect: BBox)
     }
 
+    /// Tracks what a keypoints-mode drag gesture is doing.
+    /// nil = not yet determined (first DragGesture event hasn't fired).
+    private enum KeypointDragState {
+        case pan
+        case repositioning(keypointIndex: Int)
+    }
+
     init(
         imageURL: URL,
         store: AnnotationStore? = nil,
         tool: AnnotatorTool = .box,
+        isViewLocked: Bool = false,
         rejectionToastVisible: Binding<Bool> = .constant(false),
         selectedInstanceId: Binding<Int?> = .constant(nil),
         keypointPickerVM: KeypointPickerViewModel? = nil
@@ -57,6 +72,7 @@ struct AnnotatorCanvasView: View {
         self.imageURL = imageURL
         self.store = store
         self.tool = tool
+        self.isViewLocked = isViewLocked
         self._rejectionToastVisible = rejectionToastVisible
         self._selectedInstanceId = selectedInstanceId
         self.keypointPickerVM = keypointPickerVM
@@ -282,39 +298,110 @@ struct AnnotatorCanvasView: View {
     }
 
     /// Single-finger drag dispatches per active tool. View-local staging
-    /// honors R-UI-2; the store is touched only on `.onEnded`.
+    /// honors R-UI-2; the store is touched only on `.onEnded` except for
+    /// keypoint repositioning (position updates live so the dot follows the finger).
+    ///
+    /// When `isViewLocked` is true, ALL single-finger drags route to pan —
+    /// no box draw/move/resize, no keypoint reposition. The guard is a single
+    /// early-return before the tool switch so the three `switch tool` arms remain
+    /// exhaustive and unchanged.
     private func combinedDragGesture(viewSize: CGSize, imageSize: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 1)
             .onChanged { value in
+                // Lock guard: route everything to pan when locked.
+                if isViewLocked {
+                    let dist = hypot(value.translation.width, value.translation.height)
+                    if dist > 8 {
+                        transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
+                    }
+                    return
+                }
                 switch tool {
                 case .box:
                     onBoxDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 case .select:
                     onSelectDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
-                    // Pan only when the gesture has clearly traveled (>8pt).
-                    // Tap-to-place is handled exclusively by SpatialTapGesture above.
-                    let dist = hypot(value.translation.width, value.translation.height)
-                    if dist > 8 {
-                        transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
-                    }
+                    onKeypointDragChanged(value: value, viewSize: viewSize, imageSize: imageSize)
                 }
             }
             .onEnded { value in
+                // Lock guard: commit pan on end when locked.
+                if isViewLocked {
+                    let dist = hypot(value.translation.width, value.translation.height)
+                    if dist > 8 { transform.commitPan() }
+                    return
+                }
                 switch tool {
                 case .box:
                     onBoxDragEnded(value: value, viewSize: viewSize, imageSize: imageSize)
                 case .select:
                     onSelectDragEnded(viewSize: viewSize, imageSize: imageSize)
                 case .keypoints:
-                    let dist = hypot(value.translation.width, value.translation.height)
-                    if dist > 8 {
-                        // Only commit pan for clear drag gestures.
-                        // Tap-to-place is handled by SpatialTapGesture — do nothing here for taps.
-                        transform.commitPan()
-                    }
+                    onKeypointDragEnded(value: value)
                 }
             }
+    }
+
+    // MARK: - .keypoints drag path (Phase 2)
+
+    /// Shared keypoint hit-test used by both tap and drag paths.
+    /// Returns the 1-based keypoint index of the nearest drawn dot within 8pt, or nil.
+    private func keypointHitTest(at imgPt: CGPoint, viewSize: CGSize, imageSize: CGSize) -> Int? {
+        guard let store = store, let instanceId = selectedInstanceId,
+              let ann = store.coco.annotations.first(where: { $0.id == instanceId }),
+              let kps = ann.keypoints, kps.count == 51 else { return nil }
+        let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+        let renderedScale = baseScale * transform.zoom
+        let hitRadius: CGFloat = renderedScale > 0 ? 8.0 / renderedScale : 8.0
+        for kpDef in KeypointDefinition.all {
+            let off = kpDef.cocoArrayOffset
+            let kpX = kps[off]; let kpY = kps[off + 1]; let v = Int(kps[off + 2])
+            if v == 0 && kpX == 0.0 && kpY == 0.0 { continue }
+            if hypot(imgPt.x - CGFloat(kpX), imgPt.y - CGFloat(kpY)) <= hitRadius {
+                return kpDef.index
+            }
+        }
+        return nil
+    }
+
+    private func onKeypointDragChanged(value: DragGesture.Value, viewSize: CGSize, imageSize: CGSize) {
+        // Determine on the first event whether this drag hits a keypoint dot.
+        if keypointDragState == nil {
+            let startImg = transform.viewToImage(viewPoint: value.startLocation, viewSize: viewSize, imageSize: imageSize)
+            if let idx = keypointHitTest(at: startImg, viewSize: viewSize, imageSize: imageSize) {
+                keypointDragState = .repositioning(keypointIndex: idx)
+            } else {
+                keypointDragState = .pan
+            }
+        }
+        switch keypointDragState {
+        case .repositioning(let kpIdx):
+            let curImg = transform.viewToImage(viewPoint: value.location, viewSize: viewSize, imageSize: imageSize)
+            guard let id = selectedInstanceId, let s = store,
+                  let ann = s.coco.annotations.first(where: { $0.id == id }),
+                  let kps = ann.keypoints, kps.count == 51 else { return }
+            let off = (kpIdx - 1) * 3
+            let existingVis = KPVisibility(rawValue: Int(kps[off + 2])) ?? .visible
+            s.setKeypoint(instanceId: id, keypointIndex: kpIdx, x: curImg.x, y: curImg.y, visibility: existingVis)
+        case .pan:
+            let dist = hypot(value.translation.width, value.translation.height)
+            if dist > 8 {
+                transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
+            }
+        case .none:
+            break
+        }
+    }
+
+    private func onKeypointDragEnded(value: DragGesture.Value) {
+        let prev = keypointDragState
+        keypointDragState = nil
+        if case .pan = prev {
+            let dist = hypot(value.translation.width, value.translation.height)
+            if dist > 8 { transform.commitPan() }
+        }
+        // .repositioning: store was updated live on each onChanged — nothing to commit.
     }
 
     // MARK: - .keypoints tap path (Phase 2)
@@ -327,6 +414,8 @@ struct AnnotatorCanvasView: View {
     /// by the current rendered scale (baseScale × zoom). This keeps the on-screen
     /// touch target constant regardless of zoom level.
     private func onKeypointTap(location: CGPoint, viewSize: CGSize, imageSize: CGSize) {
+        // Lock guard: taps place/cycle nothing while locked.
+        guard !isViewLocked else { return }
         guard let store = store,
               let pickerVM = keypointPickerVM,
               let instanceId = selectedInstanceId else { return }
@@ -344,10 +433,11 @@ struct AnnotatorCanvasView: View {
            kps.count == 51 {
             for kpDef in KeypointDefinition.all {
                 let off = kpDef.cocoArrayOffset
-                let v = Int(kps[off + 2])
-                guard v > 0 else { continue }  // only dots that are drawn (v = 1 or v = 2)
                 let kpX = kps[off]
                 let kpY = kps[off + 1]
+                let v = Int(kps[off + 2])
+                // Skip unplaced (v=0 at origin): no dot drawn, nothing to cycle.
+                if v == 0 && kpX == 0.0 && kpY == 0.0 { continue }
                 let dx = imgPt.x - CGFloat(kpX)
                 let dy = imgPt.y - CGFloat(kpY)
                 if hypot(dx, dy) <= hitRadiusImage {

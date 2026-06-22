@@ -39,6 +39,14 @@ struct AnnotatorView: View {
     @State private var isPickerShowing: Bool = false
     @State private var isListShowing: Bool = false
     @State private var keypointPickerVM = KeypointPickerViewModel()
+    // Collapsed to .height(36) (handle-only strip) when the keypoint picker is active
+    // so the 260pt safeAreaInset picker is not hidden behind the sheet.
+    @State private var sheetDetent: PresentationDetent = .fraction(0.33)
+    @State private var isPresentingShareSheet: Bool = false
+    /// View-lock flag. When true ALL single-finger drags route to pan; keypoint
+    /// taps are suppressed. Layered OVER `tool` — the enum stays closed (3 cases)
+    /// and the selected box remains highlighted but immutable.
+    @State private var isViewLocked: Bool = false
 
     // I1: per-project lifecycle context. nil while loading on appear.
     @State private var context: AnnotatorLifecycleContext? = nil
@@ -72,8 +80,9 @@ struct AnnotatorView: View {
                 .accessibilityLabel("Back")
                 .accessibilityHint("Returns to the project grid.")
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 flagButton
+                shareButton
             }
         }
         .accessibilityIdentifier("Annotator.Root")
@@ -124,6 +133,16 @@ struct AnnotatorView: View {
                 loadingBody
             }
         }
+        // ActivitySharePresenter is a zero-size transparent UIViewController embedded here
+        // so it can present UIActivityViewController directly via UIKit. This avoids wrapping
+        // UIActivityViewController in a SwiftUI .sheet, which conflicts with the annotator's
+        // own bottom sheet (UIKit dismissal reaches the SwiftUI layer and removes the panel).
+        .background(
+            ActivitySharePresenter(
+                url: folderURL.appendingPathComponent("annotations.json"),
+                isPresented: $isPresentingShareSheet
+            )
+        )
     }
 
     /// Full wired annotator — all surfaces plugged in.
@@ -162,25 +181,28 @@ struct AnnotatorView: View {
 
     @ViewBuilder
     private func annotatorLayout(store: AnnotationStore, coordinator: CocoFileCoordinator) -> some View {
-        // I2: instance list — adaptive (bottom sheet on compact, rail on regular).
-        // The toolbar and class chips are passed as a sheet header so they appear
-        // ABOVE the instance list inside the sheet. Placing them behind the sheet
-        // via safeAreaInset(edge:.bottom) hides them because iOS sheets overlay the
-        // full window regardless of where .sheet() is attached in the view tree.
         canvasRegion(store: store)
             .adaptiveInstanceList(
                 store: store,
                 selectedId: $selectedInstanceId,
+                selectedDetent: $sheetDetent,
                 toolbarHeader: {
                     VStack(spacing: 0) {
                         toolSelectorRow(store: store)
                         classAndAthleteRow(store: store)
-                        // Phase 2: KeypointPickerView is rendered via safeAreaInset on the
-                        // canvas (see canvasRegion), NOT here. The sheet stays compact.
                     }
                     .background(.regularMaterial)
                 }
             )
+            // Collapse the sheet when the keypoint picker is active so the 260pt
+            // safeAreaInset picker is not hidden behind the sheet.
+            .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { _, isActive in
+                withAnimation {
+                    // .height(36): just the grab handle visible — keeps the picker
+                    // list exposed (~200pt) so mirror button and rows aren't buried.
+                    sheetDetent = isActive ? .height(36) : .fraction(0.33)
+                }
+            }
             .accessibilityIdentifier("Annotator.WiredLayout")
     }
 
@@ -189,6 +211,7 @@ struct AnnotatorView: View {
             imageURL: imageURL,
             store: store,
             tool: tool,
+            isViewLocked: isViewLocked,
             rejectionToastVisible: $rejectionToastVisible,
             selectedInstanceId: $selectedInstanceId,
             keypointPickerVM: keypointPickerVM
@@ -220,6 +243,29 @@ struct AnnotatorView: View {
             toolButton(.select, systemImage: "cursorarrow", label: "Select")
             toolButton(.box, systemImage: "square.dashed", label: "Box")
             keypointsButton(store: store)
+            Spacer()
+            // Pan/Lock toggle — always present (not gated on selection).
+            // off = lock.open / "Pan" label; on = lock.fill / "Locked" label.
+            // Thumb-reachable at right edge; 44×44 minimum touch target.
+            Button {
+                isViewLocked.toggle()
+            } label: {
+                VStack(spacing: 2) {
+                    Image(systemName: isViewLocked ? "lock.fill" : "lock.open")
+                        .font(.system(size: 18))
+                    Text(isViewLocked ? "Locked" : "Pan")
+                        .font(.caption2)
+                }
+                .frame(minWidth: 44, minHeight: 44)
+                .foregroundStyle(isViewLocked ? Color.accentColor : Color.secondary)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isViewLocked ? Color.accentColor.opacity(0.12) : Color.clear)
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isViewLocked ? "Pan locked — tap to unlock" : "Pan unlocked — tap to lock")
+            .accessibilityIdentifier("Annotator.ViewLockButton")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -404,6 +450,23 @@ struct AnnotatorView: View {
         .accessibilityIdentifier("Annotator.MissingImage")
     }
 
+    // MARK: - Share / Export (top-bar trailing)
+
+    private var shareButton: some View {
+        Button {
+            // Flush pending write before the share sheet opens so the file is current.
+            if let ctx = context {
+                _ = flushBridge.flushSynchronously(coordinator: ctx.coordinator)
+            }
+            isPresentingShareSheet = true
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+        }
+        .disabled(context == nil)
+        .accessibilityLabel("Export annotations")
+        .accessibilityIdentifier("Annotator.ShareButton")
+    }
+
     // MARK: - Flag toggle (PM addendum #2: top-bar trailing)
 
     private var flagButton: some View {
@@ -484,36 +547,92 @@ struct AnnotatorView: View {
     }
 }
 
+// MARK: - Share sheet helper
+
+/// Presents UIActivityViewController directly from a transparent embedded UIViewController.
+///
+/// Wrapping UIActivityViewController in a SwiftUI .sheet creates a nested sheet that
+/// interferes with the annotator's own bottom sheet on dismissal — UIKit's sheet teardown
+/// propagates up and removes the bottom panel. Embedding a transparent UIViewController
+/// here and calling vc.present(_:animated:) from within UIKit keeps the two presentation
+/// stacks independent. completionWithItemsHandler resets isPresented so the state is clean.
+private struct ActivitySharePresenter: UIViewControllerRepresentable {
+    let url: URL
+    @Binding var isPresented: Bool
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
+    }
+
+    func updateUIViewController(_ vc: UIViewController, context: Context) {
+        guard isPresented else { return }
+        // Find the topmost presented VC in the key window so UIActivityViewController
+        // has a real, window-attached presenter. The embedded zero-size VC from
+        // .background() is too low in the hierarchy on iOS 26 — present() returns
+        // silently without showing the sheet.
+        guard let presenter = Self.topPresenter() else { return }
+        guard presenter.presentedViewController == nil else { return }
+        let activity = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        activity.completionWithItemsHandler = { _, _, _, _ in
+            isPresented = false
+        }
+        // iPad: anchor popover to the top-right of the presenter's view.
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = presenter.view
+            popover.sourceRect = CGRect(
+                x: presenter.view.bounds.maxX - 44,
+                y: presenter.view.safeAreaInsets.top,
+                width: 44,
+                height: 44
+            )
+        }
+        presenter.present(activity, animated: true)
+    }
+
+    /// Walks the presented-VC chain from the key window's rootViewController to
+    /// find the topmost visible controller.
+    private static func topPresenter() -> UIViewController? {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        guard let root = scene?.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+            return nil
+        }
+        var top: UIViewController = root
+        while let next = top.presentedViewController { top = next }
+        return top
+    }
+
+    final class Coordinator: NSObject {}
+}
+
 // MARK: - Adaptive instance list View extension
 
 private extension View {
     /// Attaches the instance list as a bottom sheet (compact) or right rail (regular).
-    /// On compact, `toolbarHeader` is rendered at the TOP of the sheet so it remains
-    /// visible above the instance list — placing it behind the sheet via safeAreaInset
-    /// would make it invisible because iOS sheets overlay the full window.
-    /// Uses `Layout.AdaptiveAnchor` so the size-class signal is the only branch (R-UI-1).
+    /// `selectedDetent` is driven by the caller so the sheet can be collapsed when the
+    /// keypoint picker (safeAreaInset) is active, preventing the sheet from covering it.
     func adaptiveInstanceList<Header: View>(
         store: AnnotationStore,
         selectedId: Binding<Int?>,
+        selectedDetent: Binding<PresentationDetent>,
         @ViewBuilder toolbarHeader: @escaping () -> Header
     ) -> some View {
-        self.modifier(AdaptiveInstanceListModifier(store: store, selectedId: selectedId, toolbarHeader: toolbarHeader))
+        self.modifier(AdaptiveInstanceListModifier(store: store, selectedId: selectedId, selectedDetent: selectedDetent, toolbarHeader: toolbarHeader))
     }
 }
 
 private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
     let store: AnnotationStore
     @Binding var selectedId: Int?
+    @Binding var selectedDetent: PresentationDetent
     let toolbarHeader: () -> Header
 
     @State private var isSheetShowing = true
 
     func body(content: Content) -> some View {
-        // AC #12: branch on horizontalSizeClass via Layout.AdaptiveAnchor.
-        // compact (iPhone portrait, iPad Slide Over) → bottom sheet.
-        // regular (iPad full-screen / Split View) → right rail.
-        // Layout.AdaptiveAnchor reads @Environment(\.horizontalSizeClass) internally,
-        // satisfying R-UI-1 (no UIDevice.userInterfaceIdiom) and AC #12.
         Layout.AdaptiveAnchor(
             compact: {
                 content
@@ -531,7 +650,8 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                                 }
                             )
                         }
-                        .presentationDetents([.fraction(0.33), .fraction(0.85)])
+                        // .height(36): handle-only strip when keypoint picker active; picker gets ~200pt of screen.
+                        .presentationDetents([.height(36), .fraction(0.33), .fraction(0.85)], selection: $selectedDetent)
                         .presentationBackgroundInteraction(.enabled)
                         .interactiveDismissDisabled()
                     }
