@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 import os
 
 /// A persisted, security-scoped folder bookmark.
@@ -88,8 +87,8 @@ struct SystemBookmarkResolver: BookmarkResolving {
 ///
 /// AIP §1 (bookmark key strategy) + §2 (`@Observable`). The store does NOT cache resolved URLs
 /// or display names — those are derived at render time from `resolve(id:)`.
-@Observable
-final class BookmarkStore {
+@MainActor
+final class BookmarkStore: ObservableObject {
     private let defaults: UserDefaults
     private let key: String
     /// Bookmark resolution seam. Exposed (not `private`) so `ProjectListViewModel.refresh()` can
@@ -100,7 +99,7 @@ final class BookmarkStore {
 
     /// Non-blocking surface for the most recent persistence fault. UI banners on non-nil and
     /// calls `clearLastError()` once the user has acknowledged (Findings #4 / #5).
-    var lastError: BookmarkStoreError?
+    @Published var lastError: BookmarkStoreError?
 
     init(
         defaults: UserDefaults = .standard,
@@ -239,7 +238,7 @@ final class BookmarkStore {
     /// store's `@Observable` state. All BUG A rename-recovery logic is preserved here; the only
     /// difference from `resolve(id:)` is that the persistence (`replace`) and `lastError` side
     /// effects are RETURNED as values for the main actor to apply, instead of mutated inline.
-    static func resolvePure(data: Data, resolver: BookmarkResolving) -> PureResolution {
+    nonisolated static func resolvePure(data: Data, resolver: BookmarkResolving) -> PureResolution {
         let outcome: (url: URL, isStale: Bool)
         do {
             outcome = try resolver.resolve(data: data)
@@ -307,7 +306,7 @@ final class BookmarkStore {
     ///       fails) → returns the best URL and the existence gate yields `.notFound` (AC #6).
     ///  - `refreshedBookmark`: bytes to persist via `replace(...)` on success, else `nil`.
     ///  - `failureDescription`: non-fatal re-mint failure to surface via `lastError`, else `nil`.
-    private static func refreshStaleBookmarkPure(
+    private nonisolated static func refreshStaleBookmarkPure(
         resolvedURL: URL,
         resolver: BookmarkResolving
     ) -> (url: URL, refreshedBookmark: Data?, failureDescription: String?) {
@@ -358,7 +357,7 @@ final class BookmarkStore {
 
     /// Walks the NSError chain and returns true if any layer indicates "file not found".
     /// Robust against the URL-bookmark API wrapping the underlying ENOENT.
-    private static func isFileNotFoundError(_ error: NSError) -> Bool {
+    private nonisolated static func isFileNotFoundError(_ error: NSError) -> Bool {
         var current: NSError? = error
         while let err = current {
             if err.domain == NSCocoaErrorDomain && err.code == NSFileReadNoSuchFileError {

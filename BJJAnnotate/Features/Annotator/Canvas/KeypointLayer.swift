@@ -68,14 +68,14 @@ struct KeypointLayer: View {
                 }
 
                 // Index badge always shown.
-                let badge = Text("\(kpDef.index)")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(Color.black)
-                let resolved = ctx.resolve(badge)
-                let labelSize = resolved.measure(in: CGSize(width: 20, height: 20))
+                // iOS 16: GraphicsContext.resolve(_: some View) (ResolvedText) is iOS 17+.
+                // Draw Text directly; Canvas centers on the point via .center anchor.
                 ctx.draw(
-                    resolved,
-                    at: CGPoint(x: viewPt.x - labelSize.width / 2, y: viewPt.y - labelSize.height / 2)
+                    Text("\(kpDef.index)")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.black),
+                    at: viewPt,
+                    anchor: .center
                 )
             }
         }

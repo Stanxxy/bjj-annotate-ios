@@ -3,6 +3,7 @@ import XCTest
 
 /// AIP §1 + §6.2 — every test uses an isolated `UserDefaults` suite and real on-disk URLs.
 /// NO `FileManager` mocks (evaluator gate). NO `UserDefaults.standard` (test isolation).
+@MainActor
 final class BookmarkStoreTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suiteName: String!

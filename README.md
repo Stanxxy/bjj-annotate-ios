@@ -40,7 +40,7 @@ is the source of truth.
 xcodebuild test \
   -project BJJAnnotate.xcodeproj \
   -scheme BJJAnnotate \
-  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6' \
+  -destination 'platform=iOS Simulator,name=iPad (9th generation),OS=16.0' \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO
 ```

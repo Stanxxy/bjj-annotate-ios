@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 
 /// Row state for the project list (Designer pack §State 1b/1c).
 ///
@@ -22,11 +21,10 @@ struct ProjectListRow: Identifiable, Equatable {
 ///   names (PM Marker D).
 /// - Drives the relocate flow: `relocate(rowID:to:)` rewrites the bookmark via
 ///   `BookmarkStore.replace(id:bookmark:)`, preserving id + MRU position.
-@Observable
 @MainActor
-final class ProjectListViewModel {
+final class ProjectListViewModel: ObservableObject {
     let bookmarkStore: BookmarkStore
-    private(set) var rows: [ProjectListRow] = []
+    @Published private(set) var rows: [ProjectListRow] = []
 
     init(bookmarkStore: BookmarkStore) {
         self.bookmarkStore = bookmarkStore

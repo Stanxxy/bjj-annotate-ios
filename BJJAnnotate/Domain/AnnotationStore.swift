@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 import os
 
 /// Typed errors surfaced by `AnnotationStore.lastError`. Phase 1 only emits these
@@ -36,27 +35,26 @@ final class NullWriteScheduler: WriteScheduling {
     }
 }
 
-/// `@Observable` single-source-of-truth for annotation state.
+/// `ObservableObject` single-source-of-truth for annotation state.
 ///
 /// AC #5: `store.coco` IS what is written to disk. No second representation.
 /// AC #4: each mutating method results in exactly ONE observation invalidation —
-///        achieved by replacing the entire `coco` document via a single setter call.
+///        achieved by replacing the entire `coco` document via a single @Published setter call.
 /// Marker C: mutation is synchronous; persistence is debounced separately.
 /// Marker D: class change preserves athlete-id binding.
 /// Addendum #1: Ref → Gi/NoGi auto-binds the next free athlete-id.
-@Observable
 @MainActor
-final class AnnotationStore {
+final class AnnotationStore: ObservableObject {
     /// Sole authoritative annotation state. Re-assignment triggers a single
     /// Observation invalidation by virtue of the macro-generated setter.
-    var coco: CocoDocument
+    @Published var coco: CocoDocument
 
     /// Non-blocking persistence-fault surface (read/write/encode/decode/iCloud).
-    var lastError: AnnotationStoreError?
+    @Published var lastError: AnnotationStoreError?
 
     /// Non-blocking conflict surface — set by `CocoFileCoordinator` after sidecar
     /// emission (T10). UI banners on non-nil.
-    var lastConflict: ConflictEvent?
+    @Published var lastConflict: ConflictEvent?
 
     /// Active image_id (the annotator surface is per-image). Used to scope mutations
     /// to the right image_state and to filter the on-screen annotations.

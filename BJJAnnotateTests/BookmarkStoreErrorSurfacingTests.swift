@@ -11,6 +11,7 @@ import XCTest
 ///   alert and recover via "Open Folder" (corrupt blob preserved as `lastError.payload`).
 /// - `lastError` is cleared (`nil`) after a successful subsequent write so a transient
 ///   corruption does not jam the UI forever.
+@MainActor
 final class BookmarkStoreErrorSurfacingTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suiteName: String!

@@ -38,7 +38,7 @@ struct AnnotatorView: View {
     @State private var selectedInstanceId: Int? = nil
     @State private var isPickerShowing: Bool = false
     @State private var isListShowing: Bool = false
-    @State private var keypointPickerVM = KeypointPickerViewModel()
+    @StateObject private var keypointPickerVM = KeypointPickerViewModel()
     // Collapsed to .height(36) (handle-only strip) when the keypoint picker is active
     // so the 260pt safeAreaInset picker is not hidden behind the sheet.
     @State private var sheetDetent: PresentationDetent = .fraction(0.33)
@@ -98,10 +98,7 @@ struct AnnotatorView: View {
         .task {
             await loadContext()
         }
-        // I2: wire willResignActive flush once the context is available.
-        .onChange(of: context == nil) { _, isNil in
-            // Triggers when context transitions nil → non-nil. No-op otherwise.
-        }
+        // I2: lifecycle flush bridge wired inside wiredAnnotatorBody after context loads.
     }
 
     // MARK: - Context loading
@@ -158,7 +155,7 @@ struct AnnotatorView: View {
         // I2: lifecycle flush bridge wired to the coordinator.
         .flushOnWillResignActive(coordinator: coordinator, bridge: flushBridge)
         // I3: mirror conflict event to the project-level watcher.
-        .onChange(of: store.lastConflict) { _, newConflict in
+        .onChange(of: store.lastConflict) { newConflict in
             if let event = newConflict {
                 conflictWatcher?.receive(conflictEvent: event)
             }
@@ -173,10 +170,7 @@ struct AnnotatorView: View {
 
     @ViewBuilder
     private func conflictBannerIfNeeded(store: AnnotationStore) -> some View {
-        if store.lastConflict != nil {
-            let conflictPresentation = ConflictPresentation(store: store)
-            ConflictBanner(presentation: conflictPresentation)
-        }
+        ConflictBanner(store: store)
     }
 
     @ViewBuilder
@@ -196,7 +190,7 @@ struct AnnotatorView: View {
             )
             // Collapse the sheet when the keypoint picker is active so the 260pt
             // safeAreaInset picker is not hidden behind the sheet.
-            .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { _, isActive in
+            .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { isActive in
                 withAnimation {
                     // .height(36): just the grab handle visible — keeps the picker
                     // list exposed (~200pt) so mirror button and rows aren't buried.
@@ -348,7 +342,7 @@ struct AnnotatorView: View {
         .padding(.vertical, 4)
         .accessibilityIdentifier("Annotator.ClassAndAthleteRow")
         // Phase 2: if the selected instance becomes referee, exit keypoints tool.
-        .onChange(of: selectedInstanceId) { _, _ in
+        .onChange(of: selectedInstanceId) { _ in
             if tool == .keypoints && !isAthleteSelected(store: store) {
                 tool = .select
             }
@@ -387,11 +381,12 @@ struct AnnotatorView: View {
         .buttonStyle(.plain)
         .sheet(isPresented: $isPickerShowing) {
             AthletePicker(
-                model: AthletePickerModel(store: store),
-                selectedInstanceId: selectedInstanceId
-            ) {
+                store: store,
+                selectedInstanceId: selectedInstanceId,
+                onDismiss: {
                 isPickerShowing = false
-            }
+                }
+            )
             .presentationDetents([.medium, .large])
         }
         .accessibilityIdentifier("Annotator.AthletePickerTrigger")
@@ -672,7 +667,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                             toolbarHeader()
                             Divider()
                             InstanceList(
-                                model: InstanceListModel(store: store),
+                                store: store,
                                 selectedInstanceId: selectedId,
                                 onSelect: { id in selectedId = id },
                                 onDelete: { id in
@@ -683,7 +678,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                         }
                         // .height(36): handle-only strip when keypoint picker active; picker gets ~200pt of screen.
                         .presentationDetents([.height(36), .fraction(0.33), .fraction(0.85)], selection: $selectedDetent)
-                        .presentationBackgroundInteraction(.enabled)
+                        .presentationBackgroundInteractionIfAvailable()
                         .interactiveDismissDisabled()
                     }
             },
@@ -692,7 +687,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                     content
                     Divider()
                     InstanceList(
-                        model: InstanceListModel(store: store),
+                        store: store,
                         selectedInstanceId: selectedId,
                         onSelect: { id in selectedId = id },
                         onDelete: { id in

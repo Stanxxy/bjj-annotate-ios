@@ -1,5 +1,5 @@
 import XCTest
-import Observation
+import Combine
 @testable import BJJAnnotate
 
 /// `AnnotationStore` is the @Observable single-source-of-truth for box mutations.
@@ -88,15 +88,16 @@ final class AnnotationStoreTests: XCTestCase {
     ) {
         let store = providedStore ?? makeStore()
         let invalidationCount = Locked<Int>(0)
-        withObservationTracking {
-            _ = store.coco
-        } onChange: {
-            invalidationCount.increment()
-        }
+        // ObservableObject: objectWillChange fires synchronously on the mutation call site.
+        // Exactly 1 emission per @Published property write — mirrors the Observation contract.
+        var cancellables = Set<AnyCancellable>()
+        store.objectWillChange.sink { invalidationCount.increment() }
+            .store(in: &cancellables)
         action(store)
-        // Observation onChange is dispatched asynchronously to the main run loop.
+        // objectWillChange is synchronous; no async wait needed. Keep a brief settle
+        // to match any future async-dispatch changes without hiding flakes.
         let exp = XCTestExpectation(description: "settle")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { exp.fulfill() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { exp.fulfill() }
         wait(for: [exp], timeout: 1.0)
         XCTAssertEqual(invalidationCount.value, 1, "expected exactly 1 invalidation", file: file, line: line)
     }
@@ -174,7 +175,7 @@ final class AnnotationStoreTests: XCTestCase {
     }
 }
 
-/// Thread-safe counter for `withObservationTracking` onChange callbacks (the
+/// Thread-safe counter for `objectWillChange.sink` callbacks (the
 /// callback may run on any executor).
 private final class Locked<T: Numeric> {
     private var _value: T

@@ -5,6 +5,7 @@ import XCTest
 /// bookmark when `URL(resolvingBookmarkData:bookmarkDataIsStale:)` reports a stale flag.
 /// iOS doesn't make staleness easy to provoke from inside a unit test, so we inject a
 /// `BookmarkResolver` test double via the protocol seam exposed by the store.
+@MainActor
 final class BookmarkStoreStaleRefreshTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suiteName: String!

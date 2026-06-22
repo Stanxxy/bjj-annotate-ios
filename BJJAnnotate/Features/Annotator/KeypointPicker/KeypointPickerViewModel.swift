@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 
 /// View-model for the keypoint picker. Tracks the active keypoint index and
 /// auto-advances to the next unplaced point after each tap.
@@ -12,11 +11,10 @@ import Observation
 ///   (Cross-group advance is NOT performed — the picker stays within the active
 ///   group until the user explicitly selects a different group row.)
 /// - Groups: Head = 1–5, Arms = 6–11, Legs = 12–17.
-@Observable
-final class KeypointPickerViewModel {
+final class KeypointPickerViewModel: ObservableObject {
 
     /// Currently-active keypoint index (1-based, 1 = nose … 17 = right_ankle).
-    var activeKeypointIndex: Int = 1
+    @Published var activeKeypointIndex: Int = 1
 
     // MARK: - Keypoint group membership
 

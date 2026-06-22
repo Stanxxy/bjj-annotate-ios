@@ -2,7 +2,7 @@ name: BJJAnnotate
 options:
   bundleIdPrefix: com.stanxxy
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "16.0"
   createIntermediateGroups: true
   defaultConfig: Debug
   groupSortPosition: top
@@ -12,7 +12,7 @@ configs:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     GENERATE_INFOPLIST_FILE: YES
     CODE_SIGN_STYLE: Automatic
@@ -20,7 +20,7 @@ targets:
   BJJAnnotate:
     type: application
     platform: iOS
-    deploymentTarget: "18.0"
+    deploymentTarget: "16.0"
     sources:
       - path: BJJAnnotate
     resources:
@@ -42,7 +42,7 @@ targets:
   BJJAnnotateTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "18.0"
+    deploymentTarget: "16.0"
     sources:
       - path: BJJAnnotateTests
         excludes:
@@ -79,7 +79,7 @@ targets:
   BJJAnnotateUITests:
     type: bundle.ui-testing
     platform: iOS
-    deploymentTarget: "18.0"
+    deploymentTarget: "16.0"
     sources:
       - path: BJJAnnotateUITests
     dependencies:

@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Designer pack §Section 1; PM AC #4 / #5 / #6.
 struct ProjectListView: View {
-    @Bindable var viewModel: ProjectListViewModel
+    @ObservedObject var viewModel: ProjectListViewModel
     @State private var pickerMode: PickerMode? = nil
     var onOpen: (ProjectListRow) -> Void = { _ in }
 
@@ -82,15 +82,12 @@ struct ProjectListView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            ContentUnavailableView {
-                Image(systemName: "folder.badge.plus")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-            } description: {
-                Text(LockedCopy.emptyProjectList)
-                    .multilineTextAlignment(.center)
-            }
+            EmptyStateView(
+                systemImage: "folder.badge.plus",
+                title: "No Projects",
+                description: LockedCopy.emptyProjectList
+            )
+            .accessibilityIdentifier("ProjectList.EmptyState")
             Spacer()
             openFolderButton
         }
@@ -98,7 +95,6 @@ struct ProjectListView: View {
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
-        .accessibilityIdentifier("ProjectList.EmptyState")
     }
 
     private var populatedState: some View {

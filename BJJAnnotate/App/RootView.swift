@@ -9,7 +9,7 @@ import SwiftUI
 /// SwiftUI NavigationStack sibling destinations cannot directly share @State. Phase 2
 /// will thread the watcher via a NavigationStack-level @Observable environment injection.
 struct RootView: View {
-    @State var listViewModel: ProjectListViewModel
+    @StateObject var listViewModel: ProjectListViewModel
     let thumbnailCache: ThumbnailCache
     let bookmarkStore: BookmarkStore
 
@@ -26,7 +26,7 @@ struct RootView: View {
     init(bookmarkStore: BookmarkStore, thumbnailCache: ThumbnailCache = ThumbnailCache()) {
         self.bookmarkStore = bookmarkStore
         self.thumbnailCache = thumbnailCache
-        _listViewModel = State(initialValue: ProjectListViewModel(bookmarkStore: bookmarkStore))
+        _listViewModel = StateObject(wrappedValue: ProjectListViewModel(bookmarkStore: bookmarkStore))
     }
 
     var body: some View {
@@ -74,9 +74,9 @@ private struct GridWrapper: View {
     let thumbnailCache: ThumbnailCache
     @Binding var path: [RootView.NavigationDestination]
 
-    @State private var gridVM: ProjectGridViewModel
+    @StateObject private var gridVM: ProjectGridViewModel
     // I3: one watcher per GridWrapper instance (= per project grid session).
-    @State private var watcher = ProjectAnnotationConflictWatcher(
+    @StateObject private var watcher = ProjectAnnotationConflictWatcher(
         annotationsURL: URL(fileURLWithPath: "/dev/null")
     )
 
@@ -90,7 +90,7 @@ private struct GridWrapper: View {
         self.bookmarkStore = bookmarkStore
         self.thumbnailCache = thumbnailCache
         self._path = path
-        _gridVM = State(initialValue: ProjectGridViewModel(bookmarkStore: bookmarkStore, bookmarkID: bookmarkID))
+        _gridVM = StateObject(wrappedValue: ProjectGridViewModel(bookmarkStore: bookmarkStore, bookmarkID: bookmarkID))
     }
 
     var body: some View {
