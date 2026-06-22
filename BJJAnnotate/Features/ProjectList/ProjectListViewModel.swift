@@ -134,4 +134,52 @@ final class ProjectListViewModel {
         bookmarkStore.touch(id: rowID)
         await refresh()
     }
+
+    // MARK: - T12: lastError banner surface
+
+    /// Human-readable description of the current persistence fault, or `nil` when
+    /// the store has no surfaced error. Drives the non-blocking banner on
+    /// `ProjectListView`.
+    var bannerMessage: String? {
+        guard let err = bookmarkStore.lastError else { return nil }
+        switch err {
+        case .decodeFailed(let description):
+            return "Couldn't read saved projects: \(description)"
+        case .encodeFailed(let description):
+            return "Couldn't save project list: \(description)"
+        case .staleRefreshFailed(let description):
+            return "Refreshing a saved project failed: \(description)"
+        case .pickerFailed(let description):
+            return "Couldn't open folder: \(description)"
+        }
+    }
+
+    /// Clears `bookmarkStore.lastError` so the banner dismisses. UI invokes this
+    /// from the banner's close action.
+    func dismissBanner() {
+        bookmarkStore.clearLastError()
+    }
+
+    /// L-3 carry-forward: routes a picker-flow failure into the same `lastError`
+    /// surface as decode/encode/stale-refresh failures so the banner is the
+    /// single source of truth for persistence + picker faults.
+    ///
+    /// Replaces the legacy `@State private var lastError` alert on
+    /// `ProjectListView`. Callers map `BookmarkResolutionError` to its
+    /// human-readable description here and the banner renders the same way.
+    func surfacePickerError(_ error: Error) {
+        let description: String
+        if let bre = error as? BookmarkResolutionError {
+            switch bre {
+            case .unknownId: description = "That project no longer exists."
+            case .notFound: description = "That folder couldn't be found."
+            case .accessDenied: description = "Couldn't access that folder. Try picking it again."
+            case .notADirectory: description = "That isn't a folder."
+            case .foundation(let detail): description = detail
+            }
+        } else {
+            description = error.localizedDescription
+        }
+        bookmarkStore.lastError = .pickerFailed(description: description)
+    }
 }

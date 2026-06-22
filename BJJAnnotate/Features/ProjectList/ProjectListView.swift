@@ -6,7 +6,6 @@ import SwiftUI
 struct ProjectListView: View {
     @Bindable var viewModel: ProjectListViewModel
     @State private var pickerMode: PickerMode? = nil
-    @State private var lastError: String? = nil
     var onOpen: (ProjectListRow) -> Void = { _ in }
 
     enum PickerMode: Identifiable {
@@ -26,6 +25,13 @@ struct ProjectListView: View {
                 emptyState
             } else {
                 populatedState
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            // T12: non-blocking banner driven by BookmarkStore.lastError.
+            // Renders above content; dismiss action calls clearLastError().
+            if let message = viewModel.bannerMessage {
+                bannerView(message: message)
             }
         }
         .navigationTitle("Projects")
@@ -59,11 +65,10 @@ struct ProjectListView: View {
                 }
             )
         }
-        .alert("Couldn't open folder", isPresented: .constant(lastError != nil), actions: {
-            Button("OK") { lastError = nil }
-        }, message: {
-            Text(lastError ?? "")
-        })
+        // L-3 carry-forward: picker errors route through `viewModel.surfacePickerError`
+        // into `bookmarkStore.lastError` and surface via the same banner above.
+        // The legacy picker-error alert (two sources of truth for picker failures) is
+        // intentionally removed — single source of truth via BookmarkStore.lastError.
         .task {
             await viewModel.refresh()
         }
@@ -163,6 +168,33 @@ struct ProjectListView: View {
         }
     }
 
+    @ViewBuilder
+    private func bannerView(message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                viewModel.dismissBanner()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Dismiss")
+            .accessibilityIdentifier("ProjectList.Banner.Dismiss")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(.secondarySystemBackground))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ProjectList.Banner")
+    }
+
     private var openFolderButton: some View {
         Button {
             pickerMode = .newProject
@@ -194,18 +226,10 @@ struct ProjectListView: View {
                     try await viewModel.relocate(rowID: rowID, to: url)
                 }
             } catch {
-                lastError = (error as? BookmarkResolutionError).map(describe) ?? error.localizedDescription
+                // L-3 carry-forward: route into the same banner surface as
+                // decode/encode/stale-refresh errors. No second source of truth.
+                viewModel.surfacePickerError(error)
             }
-        }
-    }
-
-    private func describe(_ err: BookmarkResolutionError) -> String {
-        switch err {
-        case .unknownId: return "That project no longer exists."
-        case .notFound: return "That folder couldn't be found."
-        case .accessDenied: return "Couldn't access that folder. Try picking it again."
-        case .notADirectory: return "That isn't a folder."
-        case .foundation(let detail): return detail
         }
     }
 

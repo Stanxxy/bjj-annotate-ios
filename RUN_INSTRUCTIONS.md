@@ -48,8 +48,73 @@ The `CODE_SIGNING_ALLOWED=NO` override on the CLI keeps the simulator test run
 working in sandboxed environments without provisioning profiles. Do **not**
 add this flag to device builds.
 
-Expected: `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
+Expected (Phase 0): `Executed 35 tests, with 0 failures` (BJJAnnotateTests) and
 `Executed 4 tests, with 0 failures` (BJJAnnotateUITests).
+
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T10):
+`Executed 110 tests, with 0 failures` (BJJAnnotateTests). No XCUITest
+additions on this branch yet (T13–T24 deliver UI surfaces + their
+XCUITest coverage; see Phase 1 task graph).
+
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T13 +
+evaluator pre-emptions R-UI-1 / R-UI-2 + LOW #1 / LOW #2 cleanup):
+~120 tests, with 0 failures. The dispatch added:
+  - `CocoIsDiskTruthTests` (1) — AC #33 byte-equality (LOW #2).
+  - `UIDeviceUserInterfaceIdiomBanTests` (1) — R-UI-1 grep gate.
+  - `DragStagingContractTests` (1) — R-UI-2 store-side contract.
+  - `ProjectFolderUbiquityTests` (3) — T11 ubiquity back-apply.
+  - `ProjectListErrorBannerTests` (3) — T12 banner surface.
+  - `AnnotatorNavigationContractTests` (3) — T13 navigation destination.
+
+Expected (Phase 1 partial, `feature/phase-1-domain-boxes` through T14–T24):
+~170 unit tests + 9 UI tests, 0 failures (code-complete, pending local
+`xcodebuild test`). The dispatch added:
+  - `AnnotatorCanvasGeometryTests` (8) — T14 zoom clamp, pan, double-tap-to-fit, view-to-image.
+  - `ProjectListPickerErrorRoutingTests` (4) + `ProjectListLegacyAlertRemovalTests` (1) — T14 L-3 carry-forward.
+  - `BoxIntakeTests` (10) — T15 sub-4px gate + clamp + normalization.
+  - `ProjectFolderUbiquityLockHardeningTests` (2) — T15 L-1 carry-forward (os_unfair_lock).
+  - `BoxHandleTests` (13) — T16 selection + 8 handles + resize/move.
+  - `ClassChipRowTests` (4) — T17 chip dispatch + sticky + Ref auto-bind.
+  - `AthletePickerTests` (6) — T18 athlete picker model + 8-cap.
+  - `InstanceListModelTests` (4) — T19 instance list rows.
+  - `ConflictBannerTests` (5) — T20 conflict banner + diff modal.
+  - `LifecycleFlushBridgeTests` (3) — T21 willResignActive flush + L-1 hardening.
+  - `AnnotatorImagePresenceTests` (2) — T22 zero-image presence.
+  - `MobileFirstAuditUITests` (4) — T23 AC #14 tap targets + overflow.
+  - `GoldenPathUITests` (1, 8 assertions) — T24 thumbnail → annotator → back → relaunch.
+
+L-1 hardening applied in T15 (`ProjectFolder.applyUbiquityGate`) and T21
+(`LifecycleFlushBridge.flushSynchronously`). L-2 left as a Phase 2
+diagnostic marker comment per the carry-forward. L-3 consolidation
+landed in T14 — `ProjectListView` no longer keeps a parallel `@State
+private var lastError` alert; picker errors route through
+`bookmarkStore.lastError` (`.pickerFailed` case) and surface via the
+same `safeAreaInset` banner.
+
+Expected (Phase 1 complete — I1-I4 integration, `feature/phase-1-domain-boxes`):
+~180 unit tests + 9 UI tests, 0 failures. The integration dispatch added:
+  - `AnnotatorViewLifecycleTests` (5) — I1 red tests for AnnotatorLifecycleContext.
+  - `ProjectLevelConflictTests` (3) — I3 red tests for ProjectAnnotationConflictWatcher.
+  - `GoldenPathDiskRoundtripTests` (2) — I4 two-phase disk roundtrip (write+flush, rebuild+reload).
+
+Red test commit `fb21d34` is parent of feat commit `771f530` (Marker G).
+
+Integration changes:
+  - `AnnotatorLifecycleContext` (I1): per-project store+coordinator factory. `make(folderURL:imageURL:ubiquity:)` async throws. Bootstrap on first open (3 BJJ COCO categories). `imageId` from sorted `scanImages` position (1-based). Decode failure sets `store.lastError` then continues with bootstrap.
+  - `ProjectAnnotationConflictWatcher` (I3): `@Observable @MainActor` project-level conflict watcher. `receive(conflictEvent:)` / `inject(_:)` for test injection. `bannerMessage` uses `LockedCopy.conflictBanner`. `dismiss()` clears conflict.
+  - `AnnotatorView` (I2): owns per-project lifecycle via `@State context: AnnotatorLifecycleContext`. `.task` loads context. Back button: `LifecycleFlushBridge.flushSynchronously`. `AdaptiveInstanceListModifier`: uses `Layout.AdaptiveAnchor(compact: { ... }, regular: { ... })` to branch — compact → bottom `.sheet`, regular → right rail `HStack`. `Layout.AdaptiveAnchor` reads `@Environment(\.horizontalSizeClass)` (R-UI-1 compliant, no `UIDevice.userInterfaceIdiom`). `onDelete` wired through both branches. Flag button uses `store.toggleFlag()`. `.onChange(of: store.lastConflict)` mirrors upward to `conflictWatcher`.
+  - `ProjectGridView` (I3): `gridConflictBanner` via `.safeAreaInset(edge: .top)` for AC #34.
+  - `RootView.NavigationDestination.annotator`: +`folderURL` param.
+  - `AnnotationStore.toggleFlag()` (AC #4 single-setter pattern).
+  - `ImageStateTracker.toggleFlag(in:imageId:)` static variant + `nowISO8601()` visibility.
+  - `InstanceList.onDelete`: swipe-to-delete destructive action.
+  - `ProjectGridViewModel.folderURL`: exposes project folder URL for navigation.
+
+Trap #1 verified: `CODE_SIGNING_ALLOWED`=0, `DEVELOPMENT_TEAM`=0 in pbxproj.
+Trap #2: pbxproj diff (5 new files, 10 UUIDs) in same commit as source files.
+
+Simulator destination on this machine uses `iPhone 16e,OS=26.2`; iPhone
+16 with OS 26.2 is not provisioned in the local simulator runtime.
 
 ## 3. Phase 0 PM verification — device-only criteria
 
@@ -123,3 +188,80 @@ restored the discipline:
 
 Going forward (Phase 1+), every test commit lands BEFORE the implementation
 commit that satisfies it. The evaluator validates by diffing commit order.
+
+## 7. Phase 1 progress — `feature/phase-1-domain-boxes` (in flight)
+
+Domain + persistence layers landed (T1–T10). UI surfaces (T13–T24) are
+pending; the engineer skill checkpointed mid-task-graph to hand back to
+the evaluator after the architecturally-load-bearing pieces.
+
+| Task | Status | Tests |
+|------|--------|-------|
+| T1 LockedCopy (11 strings) | Done | Phase1LockedCopyTests + LockedCopyGrepTests |
+| T2 JSONValue | Done | JSONValueTests |
+| T3 CocoModel + fixture | Done | CocoModelTests |
+| T4 AthletePalette + AthleteRegistry | Done | AthletePaletteTests + AthletePaletteGrepTests + AthleteRegistryTests |
+| T5 AnnotationStore | Done | AnnotationStoreTests + DomainSingleSourceGrepTests |
+| T6 ImageStateTracker | Done | ImageStateTrackerTests |
+| T7 UbiquityResolver + Fake | Done | UbiquityResolverFakeTests |
+| T8 + T9 CocoFileCoordinator | Done | CocoFileCoordinatorTests + UbiquityTests + ProductionSourceGrepTests + DebounceImplementationGrepTests |
+| T10 ConflictSidecar | Done | CocoFileCoordinatorConflictTests |
+| T11 ProjectFolder ubiquity back-apply | Pending | — |
+| T12 lastError banner wiring | Pending | — |
+| T13–T24 UI + golden-path | Pending | — |
+
+All Phase 0 tests still pass (35 of the 110 are Phase 0). Grep gates in
+place: 11 PM-locked strings centralised in `LockedCopy.swift`, 8 palette
+hexes centralised in `AthletePalette.swift`, zero `try?` in production
+`CocoFileCoordinator.swift` / `AnnotationStore.swift`, zero
+`DispatchQueue.asyncAfter` in the debounce path. After every
+`xcodegen generate` the `CODE_SIGNING_ALLOWED` + `DEVELOPMENT_TEAM`
+greps return 0 (Phase 0 trap #1 not re-triggered).
+
+## 8. Known Limitations (Phase 1)
+
+These limitations are **accepted Phase 1 deferrals** — they are by design and will be
+closed in Phase 2. They are disclosed here so the PM can make an informed acceptance call.
+
+### Conflict banner forwarding during an active annotator session
+
+**What works:** Data-safety is live. When a two-device iCloud edit is detected on
+`CocoFileCoordinator.persist()`, the loser's bytes are preserved verbatim in
+`annotations.conflict-<ISO8601>.json` (AC #34 / AC #36). `AnnotationStore.lastConflict`
+is set, causing the `ConflictBanner` in `AnnotatorView` to appear. The end-to-end path
+(coordinator → sidecar on disk → `lastConflict` set → banner shown) is covered by
+`ConflictWireEndToEndTests`.
+
+**What is deferred (Phase 2):** The `ProjectGridView` conflict banner (`gridConflictBanner`)
+is driven by `ProjectAnnotationConflictWatcher`. This watcher is instantiated in `RootView`
+and passed into `ProjectGridView`. However, when the user has the `AnnotatorView` open
+(NavigationStack child), the `AnnotatorView`'s `onChange(of: store.lastConflict)` can only
+forward to the watcher it received at push-time. If a conflict fires while the annotator
+is open, the `AnnotatorView`-internal `ConflictBanner` fires correctly, but the
+`ProjectGridView` banner (the NavigationStack sibling) does **not** update until the user
+navigates back and the grid re-renders against the watcher's updated state.
+
+**Phase 2 fix:** Inject `ProjectAnnotationConflictWatcher` as a shared `@Observable`
+environment object so all NavigationStack children can observe it in real time without
+requiring back-navigation.
+
+**Risk to user:** No data loss. The conflict sidecar is already on disk; the user sees the
+banner on the next grid visit. Acceptable for Phase 1 (single-device testing scenario).
+
+### imageId not-found now throws (behaviour change from prior code)
+
+Previously `AnnotatorLifecycleContext.imageId(for:in:)` silently returned `1` when the
+image was not found in the folder scan. It now **throws** `AnnotatorLifecycleError.imageNotFoundInFolder`,
+which causes `make()` to throw and `AnnotatorView.loadContext()` to log a warning and show
+the loading/error state. The annotator will not open if the imageURL passed from the grid
+is not found in the sorted folder scan. This is the correct safe behaviour (M3 fix); any
+regression here indicates the grid passed a stale or mismatched URL.
+
+### Decode failure is now read-only (behaviour change from prior code)
+
+Previously `AnnotatorLifecycleContext.make()` on a corrupt `annotations.json` returned a
+writable bootstrap store that would clobber the corrupt file on the first mutation. It now
+returns a **read-only** error-state store backed by `NullWriteScheduler`. The `lastError`
+banner is shown; mutations are silently dropped. The corrupt file is preserved on disk for
+external recovery (Files.app, iCloud version history). Phase 2 may add a user-visible
+"recover from backup" flow.

@@ -45,6 +45,29 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: BJJAnnotateTests
+        excludes:
+          - "Fixtures/**"
+      - path: BJJAnnotateTests/Fixtures
+        type: folder
+        buildPhase: resources
+      # Bundle production source as a resource so grep gate tests can read it
+      # from inside the simulator sandbox (AC #24 / AC #29 enforcement).
+      - path: BJJAnnotate/Persistence
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Persistence
+      - path: BJJAnnotate/Domain
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Domain
+      - path: BJJAnnotate/Features/Annotator/Canvas
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_Canvas
+      - path: BJJAnnotate/Features/Annotator/KeypointPicker
+        type: folder
+        buildPhase: resources
+        name: ProductionSources_KeypointPicker
     dependencies:
       - target: BJJAnnotate
     settings:
