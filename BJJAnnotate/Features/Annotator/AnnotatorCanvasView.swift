@@ -19,10 +19,12 @@ import SwiftUI
 /// handles; the gesture wiring stays here.
 struct AnnotatorCanvasView: View {
     let imageURL: URL
-    /// Optional store. When nil (T14 standalone preview), the canvas degrades
-    /// to view-only: pinch / pan / double-tap still work, but a `.box` drag
-    /// stages a preview rect and commits nothing on end.
-    var store: AnnotationStore? = nil
+    /// Live annotation store. `@ObservedObject` ensures the canvas re-renders on
+    /// every `store.objectWillChange` publication (box draw, keypoint place, delete).
+    /// Previously `var store: AnnotationStore? = nil` — made non-optional because
+    /// the only call site (AnnotatorView.canvasRegion) always passes a real store,
+    /// and the optional caused silent reactivity loss under ObservableObject.
+    @ObservedObject var store: AnnotationStore
     /// Currently-active tool. Owned by the parent `AnnotatorView` so the
     /// toolbar / chips remain a single source of truth.
     var tool: AnnotatorTool = .box
@@ -62,7 +64,7 @@ struct AnnotatorCanvasView: View {
 
     init(
         imageURL: URL,
-        store: AnnotationStore? = nil,
+        store: AnnotationStore,
         tool: AnnotatorTool = .box,
         isViewLocked: Bool = false,
         rejectionToastVisible: Binding<Bool> = .constant(false),
@@ -70,7 +72,7 @@ struct AnnotatorCanvasView: View {
         keypointPickerVM: KeypointPickerViewModel? = nil
     ) {
         self.imageURL = imageURL
-        self.store = store
+        self._store = ObservedObject(wrappedValue: store)
         self.tool = tool
         self.isViewLocked = isViewLocked
         self._rejectionToastVisible = rejectionToastVisible
@@ -108,36 +110,34 @@ struct AnnotatorCanvasView: View {
                 .accessibilityIdentifier("Annotator.Image")
 
             // Existing annotations overlay (T16 — render all boxes, highlight selection).
-            if let store = store {
-                ForEach(store.annotationsForCurrentImage, id: \.id) { ann in
-                    annotationOverlay(annotation: ann, viewSize: viewSize, imageSize: imageSize)
-                }
-                // Handles for the selected box.
-                if let id = selectedInstanceId,
-                   let ann = store.coco.annotations.first(where: { $0.id == id }) {
-                    handlesOverlay(rect: liveRect(for: ann), viewSize: viewSize, imageSize: imageSize)
-                }
-
-                // Phase 2: skeleton lines drawn UNDER keypoint dots.
-                SkeletonLayer(
-                    annotations: store.annotationsForCurrentImage,
-                    selectedInstanceId: selectedInstanceId,
-                    transform: transform,
-                    imageSize: imageSize,
-                    viewSize: viewSize
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // Phase 2: keypoint dots drawn ABOVE skeleton lines, BELOW handle overlays.
-                KeypointLayer(
-                    annotations: store.annotationsForCurrentImage,
-                    selectedInstanceId: selectedInstanceId,
-                    transform: transform,
-                    imageSize: imageSize,
-                    viewSize: viewSize
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ForEach(store.annotationsForCurrentImage, id: \.id) { ann in
+                annotationOverlay(annotation: ann, viewSize: viewSize, imageSize: imageSize)
             }
+            // Handles for the selected box.
+            if let id = selectedInstanceId,
+               let ann = store.coco.annotations.first(where: { $0.id == id }) {
+                handlesOverlay(rect: liveRect(for: ann), viewSize: viewSize, imageSize: imageSize)
+            }
+
+            // Phase 2: skeleton lines drawn UNDER keypoint dots.
+            SkeletonLayer(
+                annotations: store.annotationsForCurrentImage,
+                selectedInstanceId: selectedInstanceId,
+                transform: transform,
+                imageSize: imageSize,
+                viewSize: viewSize
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Phase 2: keypoint dots drawn ABOVE skeleton lines, BELOW handle overlays.
+            KeypointLayer(
+                annotations: store.annotationsForCurrentImage,
+                selectedInstanceId: selectedInstanceId,
+                transform: transform,
+                imageSize: imageSize,
+                viewSize: viewSize
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Drag-stage preview rectangle — view-local, never in the store.
             if let stage = dragStage {
@@ -364,7 +364,7 @@ struct AnnotatorCanvasView: View {
     /// Shared keypoint hit-test used by both tap and drag paths.
     /// Returns the 1-based keypoint index of the nearest drawn dot within 8pt, or nil.
     private func keypointHitTest(at imgPt: CGPoint, viewSize: CGSize, imageSize: CGSize) -> Int? {
-        guard let store = store, let instanceId = selectedInstanceId,
+        guard let instanceId = selectedInstanceId,
               let ann = store.coco.annotations.first(where: { $0.id == instanceId }),
               let kps = ann.keypoints, kps.count == 51 else { return nil }
         let baseScale = min(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
@@ -394,12 +394,12 @@ struct AnnotatorCanvasView: View {
         switch keypointDragState {
         case .repositioning(let kpIdx):
             let curImg = transform.viewToImage(viewPoint: value.location, viewSize: viewSize, imageSize: imageSize)
-            guard let id = selectedInstanceId, let s = store,
-                  let ann = s.coco.annotations.first(where: { $0.id == id }),
+            guard let id = selectedInstanceId,
+                  let ann = store.coco.annotations.first(where: { $0.id == id }),
                   let kps = ann.keypoints, kps.count == 51 else { return }
             let off = (kpIdx - 1) * 3
             let existingVis = KPVisibility(rawValue: Int(kps[off + 2])) ?? .visible
-            s.setKeypoint(instanceId: id, keypointIndex: kpIdx, x: curImg.x, y: curImg.y, visibility: existingVis)
+            store.setKeypoint(instanceId: id, keypointIndex: kpIdx, x: curImg.x, y: curImg.y, visibility: existingVis)
         case .pan:
             let dist = hypot(value.translation.width, value.translation.height)
             if dist > 8 {
@@ -432,8 +432,7 @@ struct AnnotatorCanvasView: View {
     private func onKeypointTap(location: CGPoint, viewSize: CGSize, imageSize: CGSize) {
         // Lock guard: taps place/cycle nothing while locked (via DragLockDispatch seam).
         guard DragLockDispatch.keypointTapShouldProceed(isViewLocked: isViewLocked) else { return }
-        guard let store = store,
-              let pickerVM = keypointPickerVM,
+        guard let pickerVM = keypointPickerVM,
               let instanceId = selectedInstanceId else { return }
 
         let imgPt = transform.viewToImage(viewPoint: location, viewSize: viewSize, imageSize: imageSize)
@@ -498,10 +497,8 @@ struct AnnotatorCanvasView: View {
         switch result {
         case .commit(let bbox):
             rejectionToastVisible = false
-            if let store = store {
-                let id = store.upsertBox(BBoxIntent(rect: bbox))
-                selectedInstanceId = id
-            }
+            let id = store.upsertBox(BBoxIntent(rect: bbox))
+            selectedInstanceId = id
         case .rejectTooSmall:
             rejectionToastVisible = true
         }
@@ -521,10 +518,6 @@ struct AnnotatorCanvasView: View {
     private func onSelectDragChanged(value: DragGesture.Value, viewSize: CGSize, imageSize: CGSize) {
         // First event of a drag: figure out what the user is interacting with.
         if selectStage == nil {
-            guard let store = store else {
-                transform.apply(panTranslation: value.translation, viewSize: viewSize, imageSize: imageSize)
-                return
-            }
             let startImg = transform.viewToImage(viewPoint: value.startLocation, viewSize: viewSize, imageSize: imageSize)
             let radius = handleHitRadius(viewSize: viewSize, imageSize: imageSize)
 
@@ -596,7 +589,7 @@ struct AnnotatorCanvasView: View {
             // Only commit if the rect passes the same sub-4px gate as a fresh draw.
             // (BoxIntake would re-check after clamp; resize already clamps.)
             if live.w >= Double(BoxIntake.minimumExtent), live.h >= Double(BoxIntake.minimumExtent) {
-                store?.upsertBox(BBoxIntent(instanceId: id, rect: live))
+                store.upsertBox(BBoxIntent(instanceId: id, rect: live))
             }
         }
     }
