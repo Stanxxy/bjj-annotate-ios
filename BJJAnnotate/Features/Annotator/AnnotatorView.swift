@@ -1,5 +1,41 @@
 import SwiftUI
 
+// MARK: - FrameNav (pure boundary logic — extracted for unit testability)
+
+/// Pure frame-navigation boundary helpers.
+///
+/// Extracted from `AnnotatorView` so tests can exercise boundary logic without
+/// spinning a SwiftUI view. All functions are pure (no side-effects).
+enum FrameNav {
+    /// Returns the 1-based index of `url` in `list`, or nil if not found.
+    ///
+    /// Tries exact URL match first; falls back to `lastPathComponent` match to
+    /// handle symlink vs. resolved-path divergence — mirrors the same strategy
+    /// used in `AnnotatorLifecycleContext.imageId(for:in:)`.
+    static func frameIndex(for url: URL, in list: [URL]) -> Int? {
+        if let idx = list.firstIndex(of: url) { return idx + 1 }
+        let name = url.lastPathComponent
+        if let idx = list.firstIndex(where: { $0.lastPathComponent == name }) { return idx + 1 }
+        return nil
+    }
+
+    /// `true` when Prev must be disabled: index is 1 (first frame) or the list
+    /// is empty / the index is unknown.
+    static func isPrevDisabled(frameIndex: Int?, frameCount: Int) -> Bool {
+        guard let idx = frameIndex, frameCount > 0 else { return true }
+        return idx <= 1
+    }
+
+    /// `true` when Next must be disabled: index equals `frameCount` (last frame)
+    /// or the list is empty / the index is unknown.
+    static func isNextDisabled(frameIndex: Int?, frameCount: Int) -> Bool {
+        guard let idx = frameIndex, frameCount > 0 else { return true }
+        return idx >= frameCount
+    }
+}
+
+// MARK: - AnnotatorView
+
 /// Per-image annotation surface.
 ///
 /// T13: navigation push from grid + zero-image guard.
@@ -26,6 +62,8 @@ import SwiftUI
 /// store's `lastConflict` and forwards them upward to the grid. The optional
 /// `conflictWatcher` is passed down from `RootView` through `ProjectGridView`.
 struct AnnotatorView: View {
+    /// Entry-point URL passed at navigation push. Immutable — only used to seed
+    /// `currentImageURL` via the custom init. All body references use `currentImageURL`.
     let imageURL: URL
     let folderURL: URL
     /// Optional project-level watcher. When non-nil, `AnnotatorView` mirrors any
@@ -39,8 +77,8 @@ struct AnnotatorView: View {
     @State private var isPickerShowing: Bool = false
     @State private var isListShowing: Bool = false
     @StateObject private var keypointPickerVM = KeypointPickerViewModel()
-    // Collapsed to .height(36) (handle-only strip) when the keypoint picker is active
-    // so the 260pt safeAreaInset picker is not hidden behind the sheet.
+    // Collapsed floor raised to .height(88) when the keypoint picker is active so
+    // the frame-nav row (above the tool row) stays visible and tappable.
     @State private var sheetDetent: PresentationDetent = .fraction(0.33)
     @State private var isPresentingShareSheet: Bool = false
     /// View-lock flag. When true ALL single-finger drags route to pan; keypoint
@@ -52,18 +90,50 @@ struct AnnotatorView: View {
     @State private var context: AnnotatorLifecycleContext? = nil
     @State private var isLoadingContext: Bool = false
 
+    // MARK: - Frame navigation state
+
+    /// Mutable current-frame URL. All body references use this — never `imageURL`.
+    /// Initialized from `imageURL` via the custom init below.
+    @State private var currentImageURL: URL
+    /// Stable sorted frame list captured once at first load (when `frameList.isEmpty`
+    /// in `loadContext()`). Preserved across frame switches; not cleared in
+    /// `switchFrame(to:)` so the nav row stays accurate during the loading state.
+    @State private var frameList: [URL] = []
+    /// Bumped on every `switchFrame(to:)` call to re-drive `.task(id:) { loadContext() }`.
+    /// Acts as a generation counter to discard stale async completions.
+    @State private var contextLoadTrigger: UUID = UUID()
+
     private let flushBridge = LifecycleFlushBridge()
+
+    // MARK: - Init
+
+    /// Custom init required to seed `currentImageURL` (a `@State` with no compile-time
+    /// default) from the pushed `imageURL`.
+    init(imageURL: URL, folderURL: URL, conflictWatcher: ProjectAnnotationConflictWatcher? = nil) {
+        self.imageURL = imageURL
+        self.folderURL = folderURL
+        self.conflictWatcher = conflictWatcher
+        _currentImageURL = State(initialValue: imageURL)
+    }
+
+    // MARK: - Computed helpers
+
+    /// 1-based index of `currentImageURL` in the stable `frameList`, or nil while
+    /// the list is still being captured.
+    private var currentFrameIndex: Int? {
+        FrameNav.frameIndex(for: currentImageURL, in: frameList)
+    }
 
     var body: some View {
         Group {
-            switch AnnotatorImagePresence.evaluate(imageURL: imageURL) {
+            switch AnnotatorImagePresence.evaluate(imageURL: currentImageURL) {
             case .imagePresent:
                 imageBody
             case .missing:
                 missingImageBody
             }
         }
-        .navigationTitle(imageURL.lastPathComponent)
+        .navigationTitle(currentImageURL.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -95,7 +165,9 @@ struct AnnotatorView: View {
         .overlay(alignment: .top) {
             toastOverlay
         }
-        .task {
+        // id: contextLoadTrigger — SwiftUI cancels the old task and re-fires
+        // loadContext() each time switchFrame(to:) bumps the trigger UUID.
+        .task(id: contextLoadTrigger) {
             await loadContext()
         }
         // I2: lifecycle flush bridge wired inside wiredAnnotatorBody after context loads.
@@ -104,20 +176,81 @@ struct AnnotatorView: View {
     // MARK: - Context loading
 
     private func loadContext() async {
+        // Generation stamp: if switchFrame(to:) fires while make() is in-flight,
+        // the old task is cancelled and this stamp detects any stale completion.
+        let myTrigger = contextLoadTrigger
         guard context == nil, !isLoadingContext else { return }
         isLoadingContext = true
+        // defer ensures isLoadingContext is reset even on task cancellation.
+        defer { isLoadingContext = false }
+
+        // Capture the stable frame list ONCE (when this is the first loadContext call).
+        // frameList is NOT cleared in switchFrame(to:), so this branch runs only once
+        // per AnnotatorView lifetime regardless of how many frame switches occur.
+        if frameList.isEmpty {
+            let folder = ProjectFolder(url: folderURL)
+            frameList = (try? folder.scanImages()) ?? []
+        }
+
         do {
             let ctx = try await AnnotatorLifecycleContext.make(
                 folderURL: folderURL,
-                imageURL: imageURL
+                imageURL: currentImageURL
             )
+            // Generation guard: discard stale results from a superseded switchFrame call.
+            guard contextLoadTrigger == myTrigger else { return }
             context = ctx
         } catch {
             // Error surfaces via store.lastError on the context; if make() throws
             // it means we can't even instantiate the coordinator (very rare OS error).
             // Nothing useful to show beyond the existing error banner.
+            // Generation guard: don't apply error state from a superseded load.
+            guard contextLoadTrigger == myTrigger else { return }
         }
+    }
+
+    // MARK: - Frame switch (non-navigating, in-place reload)
+
+    /// Switch the annotator to a different frame without pushing to RootView.path.
+    ///
+    /// Flush contract (NON-NEGOTIABLE): the OUTGOING context is flushed
+    /// synchronously before any state teardown. NullWriteScheduler (decode-error)
+    /// stores are safe — `flushSynchronously` is a no-op when there is no pending
+    /// write in the coordinator.
+    ///
+    /// Back-stack contract: this mutates internal `@State` only; `RootView.path`
+    /// is never modified. After any number of prev/next taps, one Back returns
+    /// to the grid.
+    ///
+    /// Per-frame state reset (NON-NEGOTIABLE CONTRACT 3):
+    ///   - selectedInstanceId → nil
+    ///   - keypointPickerVM.activeKeypointIndex → 1 (reset to first keypoint)
+    ///   - tool: .keypoints → .select; all other tools persist
+    ///   - sheetDetent → .fraction(0.33) (un-collapse)
+    ///   - isViewLocked persists intentionally
+    private func switchFrame(to newURL: URL) {
+        // 1. FLUSH OUTGOING — before any state is torn down.
+        if let ctx = context {
+            _ = flushBridge.flushSynchronously(coordinator: ctx.coordinator)
+        }
+
+        // 2. Per-frame state reset.
+        selectedInstanceId = nil
+        keypointPickerVM.activeKeypointIndex = 1
+        if tool == .keypoints { tool = .select }
+        sheetDetent = .fraction(0.33)
+        // isViewLocked intentionally preserved across frames.
+
+        // 3. Tear down outgoing context.
+        //    isLoadingContext MUST be reset here so the guard in loadContext() passes
+        //    when the new task starts. The old task's defer also resets it but may race;
+        //    an explicit reset here eliminates the race on the @MainActor.
         isLoadingContext = false
+        context = nil
+
+        // 4. Activate new frame — bump trigger to re-fire .task(id:) → loadContext().
+        currentImageURL = newURL
+        contextLoadTrigger = UUID()
     }
 
     // MARK: - Image body (loaded)
@@ -168,6 +301,26 @@ struct AnnotatorView: View {
         .overlay(alignment: .top) {
             ErrorBanner(store: store)
         }
+        // Hardware keyboard: left/right arrow → prev/next frame.
+        // KeyArrowInterceptor uses UIKeyCommand (iOS 16-compatible).
+        // Disabled boundaries are honored inside each closure.
+        .background(
+            KeyArrowInterceptor(
+                onPrev: {
+                    let idx = currentFrameIndex
+                    guard !FrameNav.isPrevDisabled(frameIndex: idx, frameCount: frameList.count),
+                          let i = idx else { return }
+                    switchFrame(to: frameList[i - 2])
+                },
+                onNext: {
+                    let idx = currentFrameIndex
+                    guard !FrameNav.isNextDisabled(frameIndex: idx, frameCount: frameList.count),
+                          let i = idx else { return }
+                    switchFrame(to: frameList[i])
+                }
+            )
+            .frame(width: 0, height: 0)
+        )
     }
 
     @ViewBuilder
@@ -190,6 +343,125 @@ struct AnnotatorView: View {
         .accessibilityIdentifier("Annotator.WiredLayout")
     }
 
+    // MARK: - Frame nav rows
+
+    /// Compact (iPhone) frame-navigation row: full-width `[‹]  k / N  [›]`.
+    ///
+    /// Placed as the TOP row of the bottom-sheet header, above `toolSelectorRow`.
+    /// Chevrons are ≥44×44pt per spec; disabled (greyed, non-tappable) at boundaries.
+    @ViewBuilder
+    private func frameNavRowCompact() -> some View {
+        let idx = currentFrameIndex
+        let n = frameList.count
+        let prevDisabled = FrameNav.isPrevDisabled(frameIndex: idx, frameCount: n)
+        let nextDisabled = FrameNav.isNextDisabled(frameIndex: idx, frameCount: n)
+        let counterText = n > 0 ? "\(idx ?? 1) / \(n)" : "– / –"
+
+        HStack(spacing: 0) {
+            Button {
+                if let i = idx, !prevDisabled {
+                    switchFrame(to: frameList[i - 2])  // 0-based: prev is at index (i-1)-1 = i-2
+                }
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(prevDisabled)
+            .foregroundStyle(prevDisabled ? Color.secondary : Color.primary)
+            .accessibilityLabel("Previous frame")
+            .accessibilityIdentifier("FrameNav.Prev")
+
+            Spacer()
+
+            Text(counterText)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(Color.primary)
+                .accessibilityLabel(n > 0 ? "Frame \(idx ?? 1) of \(n)" : "No frames")
+                .accessibilityIdentifier("FrameNav.Counter")
+
+            Spacer()
+
+            Button {
+                if let i = idx, !nextDisabled {
+                    switchFrame(to: frameList[i])  // 0-based: next is at index (i+1)-1 = i
+                }
+            } label: {
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(nextDisabled)
+            .foregroundStyle(nextDisabled ? Color.secondary : Color.primary)
+            .accessibilityLabel("Next frame")
+            .accessibilityIdentifier("FrameNav.Next")
+        }
+        .padding(.horizontal, 8)
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("FrameNav.Row")
+    }
+
+    /// Regular (iPad landscape) frame-navigation cluster: vertical `‹ / k / N / ›`
+    /// at the top of the 72pt left rail, above Select/Box/Keypoints.
+    ///
+    /// Counter wraps to two lines to fit the narrow rail (k over / N).
+    /// Each control is ≥44×44pt. Disabled at boundaries (greyed, non-tappable).
+    @ViewBuilder
+    private func frameNavClusterRegular() -> some View {
+        let idx = currentFrameIndex
+        let n = frameList.count
+        let prevDisabled = FrameNav.isPrevDisabled(frameIndex: idx, frameCount: n)
+        let nextDisabled = FrameNav.isNextDisabled(frameIndex: idx, frameCount: n)
+
+        VStack(spacing: 4) {
+            Button {
+                if let i = idx, !prevDisabled {
+                    switchFrame(to: frameList[i - 2])
+                }
+            } label: {
+                Image(systemName: "chevron.backward")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .disabled(prevDisabled)
+            .foregroundStyle(prevDisabled ? Color.secondary : Color.primary)
+            .accessibilityLabel("Previous frame")
+            .accessibilityIdentifier("FrameNav.Prev")
+
+            VStack(spacing: 0) {
+                Text(n > 0 ? "\(idx ?? 1)" : "–")
+                Text(n > 0 ? "/ \(n)" : "/ –")
+            }
+            .font(.caption2.monospacedDigit())
+            .multilineTextAlignment(.center)
+            .foregroundStyle(Color.secondary)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(n > 0 ? "Frame \(idx ?? 1) of \(n)" : "No frames")
+            .accessibilityIdentifier("FrameNav.Counter")
+
+            Button {
+                if let i = idx, !nextDisabled {
+                    switchFrame(to: frameList[i])
+                }
+            } label: {
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .disabled(nextDisabled)
+            .foregroundStyle(nextDisabled ? Color.secondary : Color.primary)
+            .accessibilityLabel("Next frame")
+            .accessibilityIdentifier("FrameNav.Next")
+        }
+        .accessibilityIdentifier("FrameNav.Cluster")
+    }
+
     // MARK: - Compact layout (iPhone / Slide-Over)
 
     @ViewBuilder
@@ -201,17 +473,21 @@ struct AnnotatorView: View {
                 selectedDetent: $sheetDetent,
                 toolbarHeader: {
                     VStack(spacing: 0) {
+                        // Frame-nav row is the TOP row — visible even at minimum detent (.height(88)).
+                        frameNavRowCompact()
+                        Divider()
                         toolSelectorRow(store: store)
                         classAndAthleteRow(store: store)
                     }
                     .background(.regularMaterial)
                 }
             )
-            // Collapse the sheet when the keypoint picker is active so the 260pt
-            // safeAreaInset picker is not hidden behind the sheet.
+            // Collapse the sheet when the keypoint picker is active.
+            // Floor raised from .height(36) to .height(88) so the frame-nav row
+            // (the top row of the header) stays visible and tappable when collapsed.
             .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { isActive in
                 withAnimation {
-                    sheetDetent = isActive ? .height(36) : .fraction(0.33)
+                    sheetDetent = isActive ? .height(88) : .fraction(0.33)
                 }
             }
     }
@@ -264,6 +540,11 @@ struct AnnotatorView: View {
     @ViewBuilder
     private func leftRail(store: AnnotationStore) -> some View {
         VStack(spacing: 8) {
+            // Frame nav cluster at the very top of the rail — above all tools.
+            frameNavClusterRegular()
+
+            Divider()
+
             // Tool buttons — icon only, ≥44×44pt each.
             leftRailToolButton(.select, systemImage: "cursorarrow", label: "Select")
             leftRailToolButton(.box, systemImage: "square.dashed", label: "Box")
@@ -519,7 +800,7 @@ struct AnnotatorView: View {
     /// `showKeypointStrip`: compact=true (vertical picker inset), regular=false (strip is external).
     private func canvasRegion(store: AnnotationStore, showKeypointStrip: Bool) -> some View {
         AnnotatorCanvasView(
-            imageURL: imageURL,
+            imageURL: currentImageURL,
             store: store,
             tool: tool,
             isViewLocked: isViewLocked,
@@ -914,6 +1195,71 @@ private struct ActivitySharePresenter: UIViewControllerRepresentable {
     final class Coordinator: NSObject {}
 }
 
+// MARK: - Hardware keyboard arrow-key interceptor
+
+/// Transparent UIViewController that installs UIKeyCommand handlers for
+/// left/right arrow keys (iOS 16-compatible — `onKeyPress` is iOS 17+).
+///
+/// Embedded as a zero-size `.background()` on `wiredAnnotatorBody` so it
+/// is in the UIKit VC hierarchy and can become first responder. `becomeFirstResponder()`
+/// is called in `viewDidAppear` so the VC enters the responder chain as soon as
+/// the annotator is fully on screen.
+///
+/// Closures are stored directly on the VC and refreshed on every `updateUIViewController`
+/// call so stale SwiftUI captures are never used.
+private struct KeyArrowInterceptor: UIViewControllerRepresentable {
+    var onPrev: () -> Void
+    var onNext: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> KeyArrowHostVC {
+        let vc = KeyArrowHostVC()
+        vc.onPrev = onPrev
+        vc.onNext = onNext
+        return vc
+    }
+
+    func updateUIViewController(_ vc: KeyArrowHostVC, context: Context) {
+        // Refresh closures on every SwiftUI render so the VC always calls the
+        // most up-to-date `switchFrame` / boundary logic from the view's body.
+        vc.onPrev = onPrev
+        vc.onNext = onNext
+    }
+
+    final class Coordinator: NSObject {}
+}
+
+private final class KeyArrowHostVC: UIViewController {
+    var onPrev: (() -> Void)?
+    var onNext: (() -> Void)?
+
+    override var canBecomeFirstResponder: Bool { true }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        becomeFirstResponder()
+    }
+
+    override var keyCommands: [UIKeyCommand]? {
+        [
+            UIKeyCommand(
+                input: UIKeyCommand.inputLeftArrow,
+                modifierFlags: [],
+                action: #selector(handlePrev)
+            ),
+            UIKeyCommand(
+                input: UIKeyCommand.inputRightArrow,
+                modifierFlags: [],
+                action: #selector(handleNext)
+            ),
+        ]
+    }
+
+    @objc private func handlePrev() { onPrev?() }
+    @objc private func handleNext() { onNext?() }
+}
+
 // MARK: - Adaptive instance list View extension
 
 private extension View {
@@ -956,8 +1302,9 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                                 }
                             )
                         }
-                        // .height(36): handle-only strip when keypoint picker active; picker gets ~200pt of screen.
-                        .presentationDetents([.height(36), .fraction(0.33), .fraction(0.85)], selection: $selectedDetent)
+                        // .height(88): minimum floor — keeps frame-nav row (44pt) + handle visible
+                        // when keypoint picker is active; picker still gets ~200pt of screen.
+                        .presentationDetents([.height(88), .fraction(0.33), .fraction(0.85)], selection: $selectedDetent)
                         .presentationBackgroundInteractionIfAvailable()
                         .interactiveDismissDisabled()
                     }
