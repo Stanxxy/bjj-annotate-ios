@@ -38,7 +38,7 @@ struct AnnotatorView: View {
     @State private var selectedInstanceId: Int? = nil
     @State private var isPickerShowing: Bool = false
     @State private var isListShowing: Bool = false
-    @State private var keypointPickerVM = KeypointPickerViewModel()
+    @StateObject private var keypointPickerVM = KeypointPickerViewModel()
     // Collapsed to .height(36) (handle-only strip) when the keypoint picker is active
     // so the 260pt safeAreaInset picker is not hidden behind the sheet.
     @State private var sheetDetent: PresentationDetent = .fraction(0.33)
@@ -98,10 +98,7 @@ struct AnnotatorView: View {
         .task {
             await loadContext()
         }
-        // I2: wire willResignActive flush once the context is available.
-        .onChange(of: context == nil) { _, isNil in
-            // Triggers when context transitions nil → non-nil. No-op otherwise.
-        }
+        // I2: lifecycle flush bridge wired inside wiredAnnotatorBody after context loads.
     }
 
     // MARK: - Context loading
@@ -151,6 +148,9 @@ struct AnnotatorView: View {
         let coordinator = ctx.coordinator
         return ZStack {
             // Conflict banner (I2: wired from store.lastConflict).
+            // ErrorBanner (I2: wired from store.lastError).
+            // Both are @ObservedObject child views so they re-render reactively on
+            // every @Published change — both appear-on-error and disappear-on-dismiss.
             conflictBannerIfNeeded(store: store)
 
             annotatorLayout(store: store, coordinator: coordinator)
@@ -158,30 +158,43 @@ struct AnnotatorView: View {
         // I2: lifecycle flush bridge wired to the coordinator.
         .flushOnWillResignActive(coordinator: coordinator, bridge: flushBridge)
         // I3: mirror conflict event to the project-level watcher.
-        .onChange(of: store.lastConflict) { _, newConflict in
+        .onChange(of: store.lastConflict) { newConflict in
             if let event = newConflict {
                 conflictWatcher?.receive(conflictEvent: event)
             }
         }
-        // Surface store.lastError as a banner.
+        // Surface store.lastError via ErrorBanner — an @ObservedObject child view
+        // that re-renders on every lastError change (appear AND dismiss).
         .overlay(alignment: .top) {
-            if let err = store.lastError {
-                errorBanner(error: err, store: store)
-            }
+            ErrorBanner(store: store)
         }
     }
 
     @ViewBuilder
     private func conflictBannerIfNeeded(store: AnnotationStore) -> some View {
-        if store.lastConflict != nil {
-            let conflictPresentation = ConflictPresentation(store: store)
-            ConflictBanner(presentation: conflictPresentation)
-        }
+        ConflictBanner(store: store)
     }
 
     @ViewBuilder
     private func annotatorLayout(store: AnnotationStore, coordinator: CocoFileCoordinator) -> some View {
-        canvasRegion(store: store)
+        Layout.AdaptiveAnchor(
+            compact: {
+                // iPhone portrait / Slide-Over: canvas + bottom sheet with tools+chips in header.
+                compactAnnotatorLayout(store: store)
+            },
+            regular: {
+                // iPad landscape (and portrait regular): left rail | canvas+keystrip | right rail.
+                regularAnnotatorLayout(store: store)
+            }
+        )
+        .accessibilityIdentifier("Annotator.WiredLayout")
+    }
+
+    // MARK: - Compact layout (iPhone / Slide-Over)
+
+    @ViewBuilder
+    private func compactAnnotatorLayout(store: AnnotationStore) -> some View {
+        canvasRegion(store: store, showKeypointStrip: false)
             .adaptiveInstanceList(
                 store: store,
                 selectedId: $selectedInstanceId,
@@ -196,17 +209,315 @@ struct AnnotatorView: View {
             )
             // Collapse the sheet when the keypoint picker is active so the 260pt
             // safeAreaInset picker is not hidden behind the sheet.
-            .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { _, isActive in
+            .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { isActive in
                 withAnimation {
-                    // .height(36): just the grab handle visible — keeps the picker
-                    // list exposed (~200pt) so mirror button and rows aren't buried.
                     sheetDetent = isActive ? .height(36) : .fraction(0.33)
                 }
             }
-            .accessibilityIdentifier("Annotator.WiredLayout")
     }
 
-    private func canvasRegion(store: AnnotationStore) -> some View {
+    // MARK: - Regular layout (iPad landscape / regular size class)
+    //
+    // Structure:
+    //   HStack [LEFT RAIL (64-80pt) | CANVAS + keystrip | RIGHT RAIL (~320pt)]
+    //
+    // R-UI-1: size class comes from Layout.AdaptiveAnchor; no UIDevice idiom check.
+
+    @ViewBuilder
+    private func regularAnnotatorLayout(store: AnnotationStore) -> some View {
+        HStack(spacing: 0) {
+            // LEFT RAIL: tool buttons + view-lock toggle, icon-only with VoiceOver labels.
+            leftRail(store: store)
+                .frame(width: 72)
+                .background(Color(.secondarySystemBackground))
+
+            Divider()
+
+            // CANVAS region (hero): fills remaining width after rails; 16:9 image letterboxed.
+            // Keypoint strip anchored below the canvas when active.
+            VStack(spacing: 0) {
+                canvasRegion(store: store, showKeypointStrip: false)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // KEYPOINT STRIP (regular only): 100-130pt horizontal-scroll strip of all 17 buttons.
+                // Anchored BELOW the canvas so it never overlaps the 16:9 image.
+                if tool == .keypoints && isAthleteSelected(store: store) {
+                    Divider()
+                    keypointStripRegular(store: store)
+                        .frame(height: 120)
+                        .background(Color(.secondarySystemBackground))
+                        .accessibilityIdentifier("Annotator.KeypointStrip")
+                }
+            }
+
+            Divider()
+
+            // RIGHT RAIL: class chips + athlete picker + instance list + mirror button.
+            rightRail(store: store)
+                .frame(width: 320)
+                .background(Color(.secondarySystemBackground))
+        }
+    }
+
+    // MARK: - Left rail (regular)
+
+    @ViewBuilder
+    private func leftRail(store: AnnotationStore) -> some View {
+        VStack(spacing: 8) {
+            // Tool buttons — icon only, ≥44×44pt each.
+            leftRailToolButton(.select, systemImage: "cursorarrow", label: "Select")
+            leftRailToolButton(.box, systemImage: "square.dashed", label: "Box")
+            leftRailKeypointsButton(store: store)
+
+            Spacer()
+
+            // View-lock toggle — warm amber fill when locked (not accent blue per spec).
+            Button {
+                isViewLocked.toggle()
+            } label: {
+                Image(systemName: isViewLocked ? "lock.fill" : "lock.open")
+                    .font(.system(size: 20))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .foregroundStyle(isViewLocked ? Color(red: 0.95, green: 0.65, blue: 0.0) : Color.secondary)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isViewLocked
+                                ? Color(red: 0.95, green: 0.65, blue: 0.0).opacity(0.15)
+                                : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isViewLocked ? "Pan locked — tap to unlock" : "Pan unlocked — tap to lock")
+            .accessibilityIdentifier("Annotator.ViewLockButton")
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 4)
+    }
+
+    private func leftRailToolButton(_ t: AnnotatorTool, systemImage: String, label: String) -> some View {
+        let isSelected = tool == t
+        return Button {
+            tool = t
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 20))
+                .frame(minWidth: 44, minHeight: 44)
+                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("Annotator.Tool.\(label)")
+    }
+
+    @ViewBuilder
+    private func leftRailKeypointsButton(store: AnnotationStore) -> some View {
+        let isActive = tool == .keypoints
+        let isEnabled = isAthleteSelected(store: store)
+        Button {
+            tool = .keypoints
+        } label: {
+            Image(systemName: "figure.arms.open")
+                .font(.system(size: 20))
+                .frame(minWidth: 44, minHeight: 44)
+                .foregroundStyle(isActive ? Color.accentColor : Color.primary)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isActive ? Color.accentColor.opacity(0.12) : Color.clear)
+                )
+                .opacity(isEnabled ? 1.0 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityLabel(isEnabled ? "Keypoints" : "Keypoints, select an athlete first")
+        .accessibilityIdentifier("Annotator.Tool.Keypoints")
+    }
+
+    // MARK: - Right rail (regular)
+
+    @ViewBuilder
+    private func rightRail(store: AnnotationStore) -> some View {
+        VStack(spacing: 0) {
+            // Class chip row at top, ≥44pt tall.
+            ClassChipRow(selectedInstanceId: selectedInstanceId, store: store)
+                .padding(.vertical, 4)
+                .frame(minHeight: 44)
+                .onChange(of: selectedInstanceId) { _ in
+                    if tool == .keypoints && !isAthleteSelected(store: store) {
+                        tool = .select
+                    }
+                }
+
+            Divider()
+
+            // Athlete picker trigger ≥44pt.
+            if !isRefSelected(store: store) {
+                athletePickerTrigger(store: store)
+                    .padding(.horizontal, 12)
+            }
+
+            Divider()
+
+            // Instance list scrollable rows ≥44pt each.
+            InstanceList(
+                store: store,
+                selectedInstanceId: selectedInstanceId,
+                onSelect: { id in selectedInstanceId = id },
+                onDelete: { id in
+                    store.deleteInstance(instanceId: id)
+                    if selectedInstanceId == id { selectedInstanceId = nil }
+                }
+            )
+            .frame(maxHeight: .infinity)
+
+            Divider()
+
+            // Mirror L-R button fixed at bottom.
+            Button {
+                if let id = selectedInstanceId {
+                    store.mirrorKeypoints(instanceId: id)
+                }
+            } label: {
+                Label("Mirror L↔R", systemImage: "arrow.left.arrow.right")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .disabled(selectedInstanceId == nil)
+            .padding(12)
+            .accessibilityIdentifier("KeypointPicker.MirrorButton")
+        }
+        .accessibilityIdentifier("Annotator.RightRail")
+    }
+
+    // MARK: - Keypoint strip (regular-only, horizontal scroll)
+    //
+    // 100-130pt tall strip of all 17 keypoints in groups: Head | Arms | Legs.
+    // Auto-scrolls active keypoint into view. Mirror button fixed outside scroll.
+
+    @ViewBuilder
+    private func keypointStripRegular(store: AnnotationStore) -> some View {
+        HStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        keypointStripGroup(title: "Head",
+                                           defs: KeypointDefinition.headGroup,
+                                           proxy: proxy,
+                                           store: store)
+                        Divider().frame(height: 80)
+                        keypointStripGroup(title: "Arms",
+                                           defs: KeypointDefinition.armsGroup,
+                                           proxy: proxy,
+                                           store: store)
+                        Divider().frame(height: 80)
+                        keypointStripGroup(title: "Legs",
+                                           defs: KeypointDefinition.legsGroup,
+                                           proxy: proxy,
+                                           store: store)
+                    }
+                    .padding(.horizontal, 8)
+                }
+                .onChange(of: keypointPickerVM.activeKeypointIndex) { newIndex in
+                    withAnimation { proxy.scrollTo("kp_\(newIndex)", anchor: .center) }
+                }
+                .onAppear {
+                    proxy.scrollTo("kp_\(keypointPickerVM.activeKeypointIndex)", anchor: .center)
+                }
+            }
+
+            Divider()
+
+            // Mirror button fixed outside the scroll area.
+            Button {
+                if let id = selectedInstanceId {
+                    store.mirrorKeypoints(instanceId: id)
+                }
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 18))
+                    Text("Mirror")
+                        .font(.caption2)
+                }
+                .frame(minWidth: 60, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .disabled(selectedInstanceId == nil)
+            .padding(.horizontal, 8)
+            .accessibilityIdentifier("Annotator.Strip.MirrorButton")
+        }
+    }
+
+    @ViewBuilder
+    private func keypointStripGroup(
+        title: String,
+        defs: [KeypointDefinition],
+        proxy: ScrollViewProxy,
+        store: AnnotationStore
+    ) -> some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+            HStack(spacing: 4) {
+                ForEach(defs, id: \.index) { kpDef in
+                    keypointStripButton(kpDef: kpDef, store: store)
+                        .id("kp_\(kpDef.index)")
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+    }
+
+    @ViewBuilder
+    private func keypointStripButton(kpDef: KeypointDefinition, store: AnnotationStore) -> some View {
+        let isActive = keypointPickerVM.activeKeypointIndex == kpDef.index
+        let placed = isKeypointPlaced(kpDef.index, in: store)
+        let kpColor = KeypointPalette.color(for: kpDef.side)
+
+        Button {
+            keypointPickerVM.activeKeypointIndex = kpDef.index
+        } label: {
+            VStack(spacing: 2) {
+                Circle()
+                    .fill(kpColor)
+                    .frame(width: 10, height: 10)
+                    .overlay(
+                        placed ? Image(systemName: "checkmark").font(.system(size: 6)).foregroundStyle(.white) : nil
+                    )
+                Text(kpDef.abbreviation)
+                    .font(.system(size: 9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(minWidth: 44, minHeight: 60)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(isActive ? Color.accentColor : Color.clear, lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(kpDef.name)\(placed ? ", placed" : "")\(isActive ? ", active" : "")")
+        .accessibilityIdentifier("Annotator.Strip.\(kpDef.index)")
+    }
+
+    private func isKeypointPlaced(_ index: Int, in store: AnnotationStore) -> Bool {
+        guard let id = selectedInstanceId,
+              let ann = store.annotationsForCurrentImage.first(where: { $0.id == id }),
+              let kps = ann.keypoints, kps.count == 51 else { return false }
+        return keypointPickerVM.isPlaced(index: index, in: kps)
+    }
+
+    /// `showKeypointStrip`: compact=true (vertical picker inset), regular=false (strip is external).
+    private func canvasRegion(store: AnnotationStore, showKeypointStrip: Bool) -> some View {
         AnnotatorCanvasView(
             imageURL: imageURL,
             store: store,
@@ -219,14 +530,10 @@ struct AnnotatorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .accessibilityElement(children: .contain)
-        // Phase 2 (BUG2 fix): Show the keypoint picker as a canvas inset, NOT inside the
-        // sheet toolbarHeader. The sheet only has the instance list and the compact toolbar
-        // rows; the picker sits directly below the canvas (above the sheet) so the canvas
-        // retains full height minus the picker inset (~260pt). The GeometryReader inside
-        // AnnotatorCanvasView gets the reduced size after the inset, so tap-to-place
-        // coordinate mapping remains correct.
+        // Phase 2 (BUG2 fix / compact): vertical keypoint picker anchored below canvas
+        // as a safeAreaInset. Regular branch uses the external keypoint strip instead.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if tool == .keypoints && isAthleteSelected(store: store) {
+            if showKeypointStrip && tool == .keypoints && isAthleteSelected(store: store) {
                 KeypointPickerView(
                     store: store,
                     selectedInstanceId: selectedInstanceId,
@@ -348,7 +655,7 @@ struct AnnotatorView: View {
         .padding(.vertical, 4)
         .accessibilityIdentifier("Annotator.ClassAndAthleteRow")
         // Phase 2: if the selected instance becomes referee, exit keypoints tool.
-        .onChange(of: selectedInstanceId) { _, _ in
+        .onChange(of: selectedInstanceId) { _ in
             if tool == .keypoints && !isAthleteSelected(store: store) {
                 tool = .select
             }
@@ -387,11 +694,12 @@ struct AnnotatorView: View {
         .buttonStyle(.plain)
         .sheet(isPresented: $isPickerShowing) {
             AthletePicker(
-                model: AthletePickerModel(store: store),
-                selectedInstanceId: selectedInstanceId
-            ) {
+                store: store,
+                selectedInstanceId: selectedInstanceId,
+                onDismiss: {
                 isPickerShowing = false
-            }
+                }
+            )
             .presentationDetents([.medium, .large])
         }
         .accessibilityIdentifier("Annotator.AthletePickerTrigger")
@@ -512,39 +820,6 @@ struct AnnotatorView: View {
         }
     }
 
-    // MARK: - Error banner
-
-    private func errorBanner(error: AnnotationStoreError, store: AnnotationStore) -> some View {
-        HStack {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-            Text(errorMessage(for: error))
-                .font(.callout)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button {
-                store.clearLastError()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground))
-        .accessibilityIdentifier("Annotator.ErrorBanner")
-    }
-
-    private func errorMessage(for error: AnnotationStoreError) -> String {
-        switch error {
-        case .icloudMaterializationTimeout:
-            return LockedCopy.icloudWaitingBanner
-        case .decodeFailed, .readFailed:
-            return "Could not load annotations — showing empty state."
-        case .encodeFailed, .writeFailed:
-            return "Could not save annotations — your changes may be lost."
-        }
-    }
 }
 
 // MARK: - Share sheet helper
@@ -672,7 +947,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                             toolbarHeader()
                             Divider()
                             InstanceList(
-                                model: InstanceListModel(store: store),
+                                store: store,
                                 selectedInstanceId: selectedId,
                                 onSelect: { id in selectedId = id },
                                 onDelete: { id in
@@ -683,7 +958,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                         }
                         // .height(36): handle-only strip when keypoint picker active; picker gets ~200pt of screen.
                         .presentationDetents([.height(36), .fraction(0.33), .fraction(0.85)], selection: $selectedDetent)
-                        .presentationBackgroundInteraction(.enabled)
+                        .presentationBackgroundInteractionIfAvailable()
                         .interactiveDismissDisabled()
                     }
             },
@@ -692,7 +967,7 @@ private struct AdaptiveInstanceListModifier<Header: View>: ViewModifier {
                     content
                     Divider()
                     InstanceList(
-                        model: InstanceListModel(store: store),
+                        store: store,
                         selectedInstanceId: selectedId,
                         onSelect: { id in selectedId = id },
                         onDelete: { id in

@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 
 /// Lightweight project-level conflict watcher.
 ///
@@ -18,14 +17,13 @@ import Observation
 ///
 /// Tests inject events via `inject(_:)` (same as `receive(conflictEvent:)` — visible
 /// for test access).
-@Observable
 @MainActor
-final class ProjectAnnotationConflictWatcher {
+final class ProjectAnnotationConflictWatcher: ObservableObject {
     /// URL of the project's `annotations.json`. Used as identity only (not read here).
     let annotationsURL: URL
 
     /// Non-nil when an unresolved conflict has been detected for this project.
-    private(set) var lastConflict: ConflictEvent?
+    @Published private(set) var lastConflict: ConflictEvent?
 
     init(annotationsURL: URL) {
         self.annotationsURL = annotationsURL

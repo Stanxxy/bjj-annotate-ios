@@ -10,7 +10,7 @@ import SwiftUI
 /// This view is the gesture-to-store seam.
 struct ClassChipRow: View {
     let selectedInstanceId: Int?
-    @Bindable var store: AnnotationStore
+    @ObservedObject var store: AnnotationStore
 
     var body: some View {
         HStack(spacing: 8) {
@@ -31,7 +31,7 @@ struct ClassChipRow: View {
         } label: {
             Text(Self.label(for: category))
                 .font(.subheadline.weight(.semibold))
-                .frame(minWidth: 64, minHeight: 36)
+                .frame(minWidth: 64, minHeight: 44)
                 .padding(.horizontal, 12)
                 .background(
                     Capsule().fill(isActive ? Color.accentColor.opacity(0.2) : Color(.tertiarySystemFill))

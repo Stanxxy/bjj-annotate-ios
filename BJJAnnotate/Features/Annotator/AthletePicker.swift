@@ -2,7 +2,7 @@ import SwiftUI
 
 /// T18 — Athlete picker model + view.
 ///
-/// `AthletePickerModel` is the pure value-type that drives the SwiftUI sheet:
+/// `AthletePickerModel` is a pure value-type (struct) projection of AnnotationStore:
 ///   - `rows` are the existing `athlete-N` ids, sorted ascending.
 ///   - `bottomRow` is either the new-athlete allocator row (locked copy via
 ///     `LockedCopy.newAthleteRow`) or the project-full row (locked copy via
@@ -12,14 +12,10 @@ import SwiftUI
 ///
 /// The model deliberately does NOT own UI state — it reads from the live
 /// store every time. That mirrors the project-list refresh discipline:
-/// derived state is recomputed, never cached.
-@MainActor
-final class AthletePickerModel {
+/// derived state is recomputed, never cached. SwiftUI re-derives it each render
+/// cycle when the hosting view holds @ObservedObject store.
+struct AthletePickerModel {
     let store: AnnotationStore
-
-    init(store: AnnotationStore) {
-        self.store = store
-    }
 
     struct Row: Identifiable, Equatable {
         let athleteId: String
@@ -32,6 +28,7 @@ final class AthletePickerModel {
         case locked(String)
     }
 
+    @MainActor
     var rows: [Row] {
         let athletes = store.coco.bjj_annotate_meta?.athletes ?? []
         return athletes
@@ -45,6 +42,7 @@ final class AthletePickerModel {
             }
     }
 
+    @MainActor
     var bottomRow: BottomRow {
         let athletes = store.coco.bjj_annotate_meta?.athletes ?? []
         if AthleteRegistry.allocate(in: athletes) == nil {
@@ -54,12 +52,14 @@ final class AthletePickerModel {
     }
 
     /// Rebinds an existing athlete-id to the selected instance.
+    @MainActor
     func select(athleteId: String, on instanceId: Int) {
         store.setAthleteId(instanceId: instanceId, athleteId: athleteId)
     }
 
     /// Allocates a new athlete + binds it to the selected instance. Returns
     /// the new id, or nil at the 8-athlete cap.
+    @MainActor
     @discardableResult
     func allocateNew(on instanceId: Int) -> String? {
         return store.allocateAndBindAthlete(toInstanceId: instanceId)
@@ -67,15 +67,19 @@ final class AthletePickerModel {
 
     /// Removes an athlete from the project dictionary. If any annotations reference
     /// this athlete, their athlete_id is cleared before removal.
+    @MainActor
     func remove(athleteId: String) {
         store.removeAthlete(athleteId: athleteId)
     }
 }
 
+@MainActor
 struct AthletePicker: View {
-    @State var model: AthletePickerModel
+    @ObservedObject var store: AnnotationStore
     let selectedInstanceId: Int?
     let onDismiss: () -> Void
+
+    private var model: AthletePickerModel { AthletePickerModel(store: store) }
 
     var body: some View {
         NavigationStack {

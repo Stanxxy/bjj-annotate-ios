@@ -8,8 +8,7 @@ import SwiftUI
 ///        size-class signal stays the only adaptive input (R-UI-1).
 ///
 /// Empty state copy: `LockedCopy.instanceListEmptyState`.
-@MainActor
-final class InstanceListModel {
+struct InstanceListModel {
     let store: AnnotationStore
 
     init(store: AnnotationStore) {
@@ -25,6 +24,7 @@ final class InstanceListModel {
         var id: Int { instanceId }
     }
 
+    @MainActor
     var rows: [Row] {
         return store.annotationsForCurrentImage
             .sorted { $0.id < $1.id }
@@ -44,10 +44,12 @@ final class InstanceListModel {
 /// Visible surface: adapts between right rail and bottom sheet via the size
 /// class. Uses `Layout.AdaptiveAnchor` so R-UI-1 stays honored.
 struct InstanceList: View {
-    @State var model: InstanceListModel
+    @ObservedObject var store: AnnotationStore
     let selectedInstanceId: Int?
     let onSelect: (Int) -> Void
     var onDelete: ((Int) -> Void)? = nil
+
+    private var model: InstanceListModel { InstanceListModel(store: store) }
 
     var body: some View {
         Layout.AdaptiveAnchor(
@@ -73,15 +75,11 @@ struct InstanceList: View {
     private var listBody: some View {
         Group {
             if model.rows.isEmpty {
-                ContentUnavailableView {
-                    Image(systemName: "square.dashed")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } description: {
-                    Text(model.emptyStateCopy)
-                        .multilineTextAlignment(.center)
-                }
+                EmptyStateView(
+                    systemImage: "square.dashed",
+                    title: "No Annotations",
+                    description: model.emptyStateCopy
+                )
                 .accessibilityIdentifier("Annotator.InstanceList.Empty")
             } else {
                 List {

@@ -1,5 +1,5 @@
 import XCTest
-import Observation
+import Combine
 @testable import BJJAnnotate
 
 /// Tests for `AnnotationStore` Phase 2 keypoint mutations:
@@ -123,14 +123,12 @@ final class AnnotationStoreKeypointTests: XCTestCase {
     func test_setKeypoint_emits_exactly_one_observation_invalidation() {
         let (store, id) = makeStore()
         let count = Locked2<Int>(0)
-        withObservationTracking {
-            _ = store.coco
-        } onChange: {
-            count.increment()
-        }
+        var cancellables = Set<AnyCancellable>()
+        store.objectWillChange.sink { count.increment() }
+            .store(in: &cancellables)
         store.setKeypoint(instanceId: id, keypointIndex: 3, x: 50, y: 60, visibility: .visible)
         let exp = XCTestExpectation(description: "settle")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { exp.fulfill() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { exp.fulfill() }
         wait(for: [exp], timeout: 1.0)
         XCTAssertEqual(count.value, 1, "exactly one observation invalidation per mutation")
     }
@@ -181,14 +179,12 @@ final class AnnotationStoreKeypointTests: XCTestCase {
         let (store, id) = makeStore()
         store.setKeypoint(instanceId: id, keypointIndex: 1, x: 10, y: 20, visibility: .visible)
         let count = Locked2<Int>(0)
-        withObservationTracking {
-            _ = store.coco
-        } onChange: {
-            count.increment()
-        }
+        var cancellables = Set<AnyCancellable>()
+        store.objectWillChange.sink { count.increment() }
+            .store(in: &cancellables)
         store.cycleKeypointVisibility(instanceId: id, keypointIndex: 1)
         let exp = XCTestExpectation(description: "settle")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { exp.fulfill() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { exp.fulfill() }
         wait(for: [exp], timeout: 1.0)
         XCTAssertEqual(count.value, 1)
     }
@@ -241,14 +237,12 @@ final class AnnotationStoreKeypointTests: XCTestCase {
         store.setKeypoint(instanceId: id, keypointIndex: 6, x: 100, y: 200, visibility: .visible) // left_shoulder
         store.setKeypoint(instanceId: id, keypointIndex: 7, x: 300, y: 400, visibility: .occluded) // right_shoulder
         let count = Locked2<Int>(0)
-        withObservationTracking {
-            _ = store.coco
-        } onChange: {
-            count.increment()
-        }
+        var cancellables = Set<AnyCancellable>()
+        store.objectWillChange.sink { count.increment() }
+            .store(in: &cancellables)
         store.mirrorKeypoints(instanceId: id)
         let exp = XCTestExpectation(description: "settle")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { exp.fulfill() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { exp.fulfill() }
         wait(for: [exp], timeout: 1.0)
         XCTAssertEqual(count.value, 1)
     }
@@ -461,7 +455,7 @@ final class AnnotationStoreKeypointTests: XCTestCase {
     }
 }
 
-/// Thread-safe counter for `withObservationTracking` callbacks.
+/// Thread-safe counter for `objectWillChange.sink` callbacks.
 private final class Locked2<T: Numeric> {
     private var _value: T
     private let lock = NSLock()

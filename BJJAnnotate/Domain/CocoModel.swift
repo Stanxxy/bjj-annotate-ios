@@ -195,6 +195,30 @@ struct KeypointDefinition: Equatable {
     /// y is at `cocoArrayOffset + 1`, visibility at `cocoArrayOffset + 2`.
     var cocoArrayOffset: Int { (index - 1) * 3 }
 
+    /// Short abbreviation for horizontal strip buttons (≤3 chars).
+    var abbreviation: String {
+        switch index {
+        case 1:  return "Nos"
+        case 2:  return "LEy"
+        case 3:  return "REy"
+        case 4:  return "LEa"
+        case 5:  return "REa"
+        case 6:  return "LSh"
+        case 7:  return "RSh"
+        case 8:  return "LEl"
+        case 9:  return "REl"
+        case 10: return "LWr"
+        case 11: return "RWr"
+        case 12: return "LHi"
+        case 13: return "RHi"
+        case 14: return "LKn"
+        case 15: return "RKn"
+        case 16: return "LAn"
+        case 17: return "RAn"
+        default: return "\(index)"
+        }
+    }
+
     // MARK: All 17 COCO keypoints in order
     static let all: [KeypointDefinition] = [
         KeypointDefinition(index: 1,  name: "Nose",           side: .center),

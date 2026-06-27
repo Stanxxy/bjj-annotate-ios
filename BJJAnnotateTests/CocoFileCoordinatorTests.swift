@@ -11,6 +11,7 @@ import XCTest
 ///   AC #29 — no `try?` in production CocoFileCoordinator (grep test below)
 ///   AC #30 — iCloud materialization gates read/write
 ///   AC #38 — willResignActive within 500ms of mutation flushes synchronously
+@MainActor
 final class CocoFileCoordinatorTests: XCTestCase {
 
     private var temp: TempDirectory!
@@ -169,6 +170,7 @@ final class CocoFileCoordinatorTests: XCTestCase {
 }
 
 /// AC #30 — placeholder triggers `startDownloading`, succeeds when ready / times out.
+@MainActor
 final class CocoFileCoordinatorUbiquityTests: XCTestCase {
 
     private var temp: TempDirectory!
@@ -246,6 +248,7 @@ final class CocoFileCoordinatorUbiquityTests: XCTestCase {
 ///
 /// Reads the bundled production source files (added to BJJAnnotateTests resources
 /// via project.yml so the simulator sandbox can read them).
+@MainActor
 final class ProductionSourceGrepTests: XCTestCase {
 
     func test_no_try_question_mark_in_CocoFileCoordinator_or_AnnotationStore() throws {
@@ -287,6 +290,7 @@ final class ProductionSourceGrepTests: XCTestCase {
 }
 
 /// AC #24: no DispatchQueue.asyncAfter in the debounce path.
+@MainActor
 final class DebounceImplementationGrepTests: XCTestCase {
 
     func test_no_DispatchQueue_asyncAfter_in_CocoFileCoordinator() throws {

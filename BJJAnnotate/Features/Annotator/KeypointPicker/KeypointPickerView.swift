@@ -13,7 +13,7 @@ struct KeypointPickerView: View {
 
     let store: AnnotationStore
     let selectedInstanceId: Int?
-    @Bindable var pickerVM: KeypointPickerViewModel
+    @ObservedObject var pickerVM: KeypointPickerViewModel
 
     var body: some View {
         VStack(spacing: 0) {

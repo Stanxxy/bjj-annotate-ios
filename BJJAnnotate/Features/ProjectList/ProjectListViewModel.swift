@@ -1,5 +1,4 @@
 import Foundation
-import Observation
 
 /// Row state for the project list (Designer pack §State 1b/1c).
 ///
@@ -16,17 +15,16 @@ struct ProjectListRow: Identifiable, Equatable {
     let lastOpenedAt: Date      // canonical sort key (independent of state)
 }
 
-/// `@Observable` view model for `RootView` / `ProjectListView`.
+/// `ObservableObject`/`@Published` view model for `RootView` / `ProjectListView`.
 ///
 /// - Re-derives display names from `BookmarkStore.resolve(id:)` on `refresh()` — never caches
 ///   names (PM Marker D).
 /// - Drives the relocate flow: `relocate(rowID:to:)` rewrites the bookmark via
 ///   `BookmarkStore.replace(id:bookmark:)`, preserving id + MRU position.
-@Observable
 @MainActor
-final class ProjectListViewModel {
+final class ProjectListViewModel: ObservableObject {
     let bookmarkStore: BookmarkStore
-    private(set) var rows: [ProjectListRow] = []
+    @Published private(set) var rows: [ProjectListRow] = []
 
     init(bookmarkStore: BookmarkStore) {
         self.bookmarkStore = bookmarkStore
@@ -42,7 +40,7 @@ final class ProjectListViewModel {
     /// N bookmarks; `ProjectGridViewModel.load()` resolving a single bookmark on the main actor
     /// is NOT a workable mirror here).
     ///
-    /// But `resolve(id:)` ALSO mutates the `@Observable` store (`replace` UserDefaults write +
+    /// But `resolve(id:)` ALSO mutates the `ObservableObject` store (`replace` UserDefaults write +
     /// `lastError`), and the store has no synchronization — calling it off-main while
     /// `touchOpened()` mutates the same store on the main actor is a data race. So we split the
     /// work along the grid VM's actual philosophy (offload *value* work, mutate *state* on the

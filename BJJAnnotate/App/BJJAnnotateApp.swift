@@ -12,7 +12,7 @@ import UIKit
 /// bookmark-error row without driving the real `UIDocumentPickerViewController`.
 @main
 struct BJJAnnotateApp: App {
-    @State private var bookmarkStore: BookmarkStore
+    @StateObject private var bookmarkStore: BookmarkStore
     @State private var thumbnailCache: ThumbnailCache
 
     init() {
@@ -35,7 +35,7 @@ struct BJJAnnotateApp: App {
 
         Self.applyUITestSeeds(args: args, into: store)
 
-        _bookmarkStore = State(initialValue: store)
+        _bookmarkStore = StateObject(wrappedValue: store)
         _thumbnailCache = State(initialValue: ThumbnailCache(scale: deviceScale))
     }
 

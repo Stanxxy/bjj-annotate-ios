@@ -11,7 +11,7 @@ import SwiftUI
 /// `ProjectAnnotationConflictWatcher` is threaded through from `RootView` so a conflict
 /// banner can surface on the grid even before opening the annotator.
 struct ProjectGridView: View {
-    @Bindable var viewModel: ProjectGridViewModel
+    @ObservedObject var viewModel: ProjectGridViewModel
     let cache: ThumbnailCache
     /// I2: callback now passes (imageURL, folderURL) so AnnotatorView can own the
     /// per-project lifecycle without re-resolving from the bookmarkID.
@@ -122,6 +122,9 @@ struct ProjectGridView: View {
                         ThumbnailCell(url: url, cache: cache)
                     }
                     .buttonStyle(.plain)
+                    // Forward ThumbnailCell identifier onto the wrapping button so XCUITest
+                    // app.buttons.matching(BEGINSWITH "ProjectGrid.Cell.") still finds it.
+                    .accessibilityIdentifier("ProjectGrid.Cell.\(url.lastPathComponent)")
                     .accessibilityHint("Opens the annotator for this image.")
                 }
             }
@@ -142,25 +145,21 @@ struct ProjectGridView: View {
         ScrollView {
             VStack {
                 Spacer(minLength: 80)
-                ContentUnavailableView {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .font(.system(size: 64))
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } description: {
-                    Text(LockedCopy.emptyProjectGrid)
-                        .multilineTextAlignment(.center)
-                }
+                EmptyStateView(
+                    systemImage: "photo.on.rectangle.angled",
+                    title: "No Images",
+                    description: LockedCopy.emptyProjectGrid
+                )
                 Spacer(minLength: 80)
             }
             .frame(maxWidth: .infinity, minHeight: 600)
             .padding(.horizontal, 16)
         }
+        .accessibilityIdentifier("ProjectGrid.EmptyState")
         .background(Color(.systemGroupedBackground))
         .refreshable {
             await viewModel.load()
         }
-        .accessibilityIdentifier("ProjectGrid.EmptyState")
         .accessibilityAction(named: "Refresh") {
             Task { await viewModel.load() }
         }

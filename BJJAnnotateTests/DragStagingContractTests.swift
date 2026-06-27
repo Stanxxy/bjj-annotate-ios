@@ -1,5 +1,5 @@
 import XCTest
-import Observation
+import Combine
 @testable import BJJAnnotate
 
 /// Evaluator pre-emption R-UI-2: drag-staging stays in view-local `@State`;
@@ -8,7 +8,7 @@ import Observation
 /// Why this matters: 60Hz drag-progress events touching `store.coco` would
 /// trigger 60 SwiftUI invalidations and 60 `scheduleWrite` calls per second.
 /// Even with 500ms debounce in `CocoFileCoordinator`, the in-process work
-/// (CocoDocument value-type copy + Observation propagation) is wasted CPU.
+/// (CocoDocument value-type copy + ObservableObject propagation) is wasted CPU.
 /// The contract: `AnnotatorCanvasView` keeps the active drag in
 /// `@State private var dragStage: DragStage?` and only calls
 /// `store.upsertBox` inside the gesture's `.onEnded`.
@@ -41,13 +41,11 @@ final class DragStagingContractTests: XCTestCase {
         )
         let store = AnnotationStore(initial: doc, imageId: 1, scheduler: scheduler)
 
-        // Observation counter (matches AnnotationStoreTests convention).
+        // ObservableObject counter: objectWillChange fires synchronously on each @Published write.
         let invalidations = LockedCounter(0)
-        withObservationTracking {
-            _ = store.coco
-        } onChange: {
-            invalidations.increment()
-        }
+        var cancellables = Set<AnyCancellable>()
+        store.objectWillChange.sink { invalidations.increment() }
+            .store(in: &cancellables)
 
         // Simulate 60 drag-progress events: these stay in view-local state.
         // The contract is that NONE of them call into the store. We model that
@@ -66,15 +64,15 @@ final class DragStagingContractTests: XCTestCase {
         let intent = BBoxIntent(rect: stagedRect)
         _ = store.upsertBox(intent)
 
-        // Allow the Observation onChange to flush.
+        // Allow objectWillChange to flush (it's synchronous but give settle time for consistency).
         let exp = XCTestExpectation(description: "settle")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { exp.fulfill() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { exp.fulfill() }
         wait(for: [exp], timeout: 1.0)
 
         XCTAssertEqual(scheduler.scheduledPayloads.count, 1,
                        "Gesture-end commit must produce exactly 1 scheduleWrite call")
         XCTAssertEqual(invalidations.value, 1,
-                       "Exactly 1 @Observable invalidation per gesture-end commit")
+                       "Exactly 1 ObservableObject invalidation per gesture-end commit")
     }
 }
 
