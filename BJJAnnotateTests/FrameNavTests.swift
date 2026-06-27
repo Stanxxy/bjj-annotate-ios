@@ -461,26 +461,30 @@ final class FrameNavTests: XCTestCase {
 
     // MARK: - 11. Reload race — generation guard (m4)
 
-    /// Documents and validates the generation-guard concept used in `loadContext()`.
+    /// Drives `FrameNav.shouldApplyLoad` — the pure helper extracted from the two
+    /// post-await guard sites inside `loadContext()` — to verify its accept/reject
+    /// semantics directly.
     ///
-    /// When `switchFrame` fires while a previous `loadContext` task is in-flight,
-    /// a new `UUID` is generated and the stale task sees `contextLoadTrigger != myTrigger`,
-    /// discarding its result without clobbering state.
-    ///
-    /// Note: the async race itself cannot be exercised without a full SwiftUI harness,
-    /// so this test validates the mathematical precondition (distinct UUIDs are unequal)
-    /// that the guard relies on. On-device validation covers the race timing.
-    func test_generation_guard_rejects_stale_context_load() {
-        let triggerBefore = UUID()
-        let triggerAfter  = UUID()
+    /// Non-tautological because:
+    ///   - Both assertions call the REAL product function; deleting `shouldApplyLoad`
+    ///     breaks the build.
+    ///   - If `shouldApplyLoad` were inverted (`myTrigger != current`) the first
+    ///     assertion ("fresh load applies") would fail (returns false for equal UUIDs)
+    ///     and the second ("stale load rejected") would also fail (returns true for
+    ///     unequal UUIDs), making the inversion detectable.
+    func test_shouldApplyLoad_accepts_fresh_and_rejects_stale() {
+        let captured = UUID()   // stamp captured at the start of a loadContext task
+        let bumped   = UUID()   // contextLoadTrigger after a subsequent switchFrame call
 
-        XCTAssertNotEqual(triggerBefore, triggerAfter,
-                          "Distinct UUIDs must not be equal (generation guard precondition)")
+        // Fresh load: myTrigger still matches the current trigger — apply the result.
+        XCTAssertTrue(
+            FrameNav.shouldApplyLoad(myTrigger: captured, current: captured),
+            "shouldApplyLoad must return true when myTrigger == current (fresh load)")
 
-        // Stale guard: myTrigger == triggerBefore, current == triggerAfter → reject.
-        let isStale = (triggerAfter != triggerBefore)
-        XCTAssertTrue(isStale,
-                      "A stale load (old trigger ≠ current trigger) must be rejected by the generation guard")
+        // Stale load: current trigger has advanced — discard the in-flight result.
+        XCTAssertFalse(
+            FrameNav.shouldApplyLoad(myTrigger: captured, current: bumped),
+            "shouldApplyLoad must return false when current trigger has advanced past myTrigger (stale load)")
     }
 
     // MARK: - Private helpers

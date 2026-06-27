@@ -68,6 +68,19 @@ enum FrameNav {
         )
     }
 
+    // MARK: - Generation guard (m4 — stale-load rejection testability)
+
+    /// Returns `true` when a `loadContext` completion is still current and should
+    /// be applied; `false` when `contextLoadTrigger` has advanced past the stamp
+    /// captured at task start (meaning the task is stale and must be discarded).
+    ///
+    /// Extracted from `loadContext()` so unit tests can drive the guard decision
+    /// without a SwiftUI harness. The two post-await guard sites in `loadContext`
+    /// both route through this function — deleting it would break the build.
+    static func shouldApplyLoad(myTrigger: UUID, current: UUID) -> Bool {
+        myTrigger == current
+    }
+
     // MARK: - Switch-frame ordered execution (M2 — ordering testability)
 
     /// Executes frame-switch steps in the guaranteed ordering:
@@ -253,14 +266,14 @@ struct AnnotatorView: View {
                 imageURL: currentImageURL
             )
             // Generation guard: discard stale results from a superseded switchFrame call.
-            guard contextLoadTrigger == myTrigger else { return }
+            guard FrameNav.shouldApplyLoad(myTrigger: myTrigger, current: contextLoadTrigger) else { return }
             context = ctx
         } catch {
             // Error surfaces via store.lastError on the context; if make() throws
             // it means we can't even instantiate the coordinator (very rare OS error).
             // Nothing useful to show beyond the existing error banner.
             // Generation guard: don't apply error state from a superseded load.
-            guard contextLoadTrigger == myTrigger else { return }
+            guard FrameNav.shouldApplyLoad(myTrigger: myTrigger, current: contextLoadTrigger) else { return }
         }
     }
 
