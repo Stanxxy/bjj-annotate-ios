@@ -32,6 +32,61 @@ enum FrameNav {
         guard let idx = frameIndex, frameCount > 0 else { return true }
         return idx >= frameCount
     }
+
+    // MARK: - Per-frame state reset (Contract 3)
+
+    /// The post-reset state returned by `applyPerFrameReset`.
+    ///
+    /// `isViewLocked` is intentionally absent — it persists across frame switches
+    /// and must never be included here.
+    struct PerFrameResetState {
+        var tool: AnnotatorTool
+        var selectedInstanceId: Int?
+        var activeKeypointIndex: Int
+        var sheetDetent: PresentationDetent
+    }
+
+    /// Pure per-frame state reset. Returns the post-switch state given the prior state.
+    ///
+    /// Contract (NON-NEGOTIABLE):
+    ///   - `tool`: `.keypoints` → `.select`; all other tools persist.
+    ///   - `selectedInstanceId` → `nil`.
+    ///   - `activeKeypointIndex` → 1 (reset to first keypoint).
+    ///   - `sheetDetent` → `.fraction(0.33)` (un-collapse).
+    ///   - `isViewLocked` is NOT in the output — it persists across frame switches.
+    static func applyPerFrameReset(
+        tool: AnnotatorTool,
+        selectedInstanceId: Int?,
+        activeKeypointIndex: Int,
+        sheetDetent: PresentationDetent
+    ) -> PerFrameResetState {
+        return PerFrameResetState(
+            tool: tool == .keypoints ? .select : tool,
+            selectedInstanceId: nil,
+            activeKeypointIndex: 1,
+            sheetDetent: .fraction(0.33)
+        )
+    }
+
+    // MARK: - Switch-frame ordered execution (M2 — ordering testability)
+
+    /// Executes frame-switch steps in the guaranteed ordering:
+    ///   1. flush → 2. resetState → 3. tearDownContext → 4. activateNew
+    ///
+    /// Extracted as a pure sequencer so unit tests can inject spy closures and
+    /// verify the call order. Reordering the closures inside `switchFrame` would
+    /// be detectable because the test drives the SAME function with spies.
+    static func executeSwitchFrameOrdered(
+        flush: () -> Void,
+        resetState: () -> Void,
+        tearDownContext: () -> Void,
+        activateNew: () -> Void
+    ) {
+        flush()
+        resetState()
+        tearDownContext()
+        activateNew()
+    }
 }
 
 // MARK: - AnnotatorView
@@ -229,28 +284,46 @@ struct AnnotatorView: View {
     ///   - sheetDetent → .fraction(0.33) (un-collapse)
     ///   - isViewLocked persists intentionally
     private func switchFrame(to newURL: URL) {
-        // 1. FLUSH OUTGOING — before any state is torn down.
-        if let ctx = context {
-            _ = flushBridge.flushSynchronously(coordinator: ctx.coordinator)
-        }
-
-        // 2. Per-frame state reset.
-        selectedInstanceId = nil
-        keypointPickerVM.activeKeypointIndex = 1
-        if tool == .keypoints { tool = .select }
-        sheetDetent = .fraction(0.33)
-        // isViewLocked intentionally preserved across frames.
-
-        // 3. Tear down outgoing context.
-        //    isLoadingContext MUST be reset here so the guard in loadContext() passes
-        //    when the new task starts. The old task's defer also resets it but may race;
-        //    an explicit reset here eliminates the race on the @MainActor.
-        isLoadingContext = false
-        context = nil
-
-        // 4. Activate new frame — bump trigger to re-fire .task(id:) → loadContext().
-        currentImageURL = newURL
-        contextLoadTrigger = UUID()
+        // Steps are sequenced through FrameNav.executeSwitchFrameOrdered so that
+        // unit tests can inject spy closures and verify flush precedes teardown.
+        FrameNav.executeSwitchFrameOrdered(
+            flush: {
+                if let ctx = context {
+                    let didFlush = flushBridge.flushSynchronously(coordinator: ctx.coordinator)
+                    if !didFlush {
+                        // m1: flush timed out (5 s) — outgoing annotations may not be
+                        // fully written to disk. Context is torn down per contract regardless.
+                        print("[AnnotatorView] WARNING: flushSynchronously timed out before frame switch — outgoing annotations may not be fully persisted.")
+                    }
+                }
+            },
+            resetState: {
+                // Pure reset via FrameNav.applyPerFrameReset (see Contract 3).
+                let reset = FrameNav.applyPerFrameReset(
+                    tool: tool,
+                    selectedInstanceId: selectedInstanceId,
+                    activeKeypointIndex: keypointPickerVM.activeKeypointIndex,
+                    sheetDetent: sheetDetent
+                )
+                tool = reset.tool
+                selectedInstanceId = reset.selectedInstanceId
+                keypointPickerVM.activeKeypointIndex = reset.activeKeypointIndex
+                sheetDetent = reset.sheetDetent
+                // isViewLocked intentionally preserved across frames (NOT in reset output).
+            },
+            tearDownContext: {
+                // isLoadingContext MUST be reset so the guard in loadContext() passes
+                // when the new task starts. The old task's defer also resets it but may
+                // race; an explicit reset here eliminates the race on the @MainActor.
+                isLoadingContext = false
+                context = nil
+            },
+            activateNew: {
+                // Bump trigger to re-fire .task(id:) → loadContext().
+                currentImageURL = newURL
+                contextLoadTrigger = UUID()
+            }
+        )
     }
 
     // MARK: - Image body (loaded)
@@ -355,7 +428,13 @@ struct AnnotatorView: View {
         let n = frameList.count
         let prevDisabled = FrameNav.isPrevDisabled(frameIndex: idx, frameCount: n)
         let nextDisabled = FrameNav.isNextDisabled(frameIndex: idx, frameCount: n)
-        let counterText = n > 0 ? "\(idx ?? 1) / \(n)" : "– / –"
+        // B1: When n > 0 but idx == nil (iCloud placeholder, frame absent from list),
+        // render the unmapped state loudly — never a plausible-but-wrong number.
+        let counterText: String = {
+            guard n > 0 else { return "– / –" }
+            guard let i = idx else { return "– / \(n)" }
+            return "\(i) / \(n)"
+        }()
 
         HStack(spacing: 0) {
             Button {
@@ -371,7 +450,8 @@ struct AnnotatorView: View {
             .buttonStyle(.plain)
             .disabled(prevDisabled)
             .foregroundStyle(prevDisabled ? Color.secondary : Color.primary)
-            .accessibilityLabel("Previous frame")
+            .accessibilityLabel(prevDisabled ? "Previous frame, unavailable" : "Previous frame")
+            .accessibilityHint(prevDisabled ? "You are at the first frame." : "")
             .accessibilityIdentifier("FrameNav.Prev")
 
             Spacer()
@@ -379,7 +459,11 @@ struct AnnotatorView: View {
             Text(counterText)
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(Color.primary)
-                .accessibilityLabel(n > 0 ? "Frame \(idx ?? 1) of \(n)" : "No frames")
+                .accessibilityLabel({
+                    guard n > 0 else { return "No frames" }
+                    guard let i = idx else { return "Frame position unavailable, \(n) frames" }
+                    return "Frame \(i) of \(n)"
+                }())
                 .accessibilityIdentifier("FrameNav.Counter")
 
             Spacer()
@@ -397,7 +481,8 @@ struct AnnotatorView: View {
             .buttonStyle(.plain)
             .disabled(nextDisabled)
             .foregroundStyle(nextDisabled ? Color.secondary : Color.primary)
-            .accessibilityLabel("Next frame")
+            .accessibilityLabel(nextDisabled ? "Next frame, unavailable" : "Next frame")
+            .accessibilityHint(nextDisabled ? "You are at the last frame." : "")
             .accessibilityIdentifier("FrameNav.Next")
         }
         .padding(.horizontal, 8)
@@ -426,22 +511,38 @@ struct AnnotatorView: View {
                 Image(systemName: "chevron.backward")
                     .font(.system(size: 18, weight: .medium))
                     .frame(minWidth: 44, minHeight: 44)
+                    // P0: explicit contentShape so the full 44×44 frame is tappable
+                    // (without this the hit-target shrinks to ~18pt glyph bounds on iPad).
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(prevDisabled)
             .foregroundStyle(prevDisabled ? Color.secondary : Color.primary)
-            .accessibilityLabel("Previous frame")
+            .accessibilityLabel(prevDisabled ? "Previous frame, unavailable" : "Previous frame")
+            .accessibilityHint(prevDisabled ? "You are at the first frame." : "")
             .accessibilityIdentifier("FrameNav.Prev")
 
             VStack(spacing: 0) {
-                Text(n > 0 ? "\(idx ?? 1)" : "–")
+                // B1: When n > 0 but idx == nil (iCloud placeholder), show "–" not "1".
+                Text({
+                    guard n > 0 else { return "–" }
+                    guard let i = idx else { return "–" }
+                    return "\(i)"
+                }())
                 Text(n > 0 ? "/ \(n)" : "/ –")
             }
-            .font(.caption2.monospacedDigit())
+            // P1b: .caption2 (11 pt) fails WCAG AA contrast in the narrow rail.
+            // Bumped to .caption (12 pt) — still fits two lines at 4-digit counts
+            // within the 64 pt-usable rail width.
+            .font(.caption.monospacedDigit())
             .multilineTextAlignment(.center)
             .foregroundStyle(Color.secondary)
             .frame(maxWidth: .infinity)
-            .accessibilityLabel(n > 0 ? "Frame \(idx ?? 1) of \(n)" : "No frames")
+            .accessibilityLabel({
+                guard n > 0 else { return "No frames" }
+                guard let i = idx else { return "Frame position unavailable, \(n) frames" }
+                return "Frame \(i) of \(n)"
+            }())
             .accessibilityIdentifier("FrameNav.Counter")
 
             Button {
@@ -452,11 +553,14 @@ struct AnnotatorView: View {
                 Image(systemName: "chevron.forward")
                     .font(.system(size: 18, weight: .medium))
                     .frame(minWidth: 44, minHeight: 44)
+                    // P0: explicit contentShape so the full 44×44 frame is tappable.
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(nextDisabled)
             .foregroundStyle(nextDisabled ? Color.secondary : Color.primary)
-            .accessibilityLabel("Next frame")
+            .accessibilityLabel(nextDisabled ? "Next frame, unavailable" : "Next frame")
+            .accessibilityHint(nextDisabled ? "You are at the last frame." : "")
             .accessibilityIdentifier("FrameNav.Next")
         }
         .accessibilityIdentifier("FrameNav.Cluster")
@@ -485,6 +589,14 @@ struct AnnotatorView: View {
             // Collapse the sheet when the keypoint picker is active.
             // Floor raised from .height(36) to .height(88) so the frame-nav row
             // (the top row of the header) stays visible and tappable when collapsed.
+            //
+            // P2 / iOS 16.0–16.3 gap:
+            // `presentationBackgroundInteractionIfAvailable()` (ViewExtensions.swift) skips
+            // `.presentationBackgroundInteraction(.enabled)` on iOS < 16.4, so the 88 pt
+            // collapsed sheet is OPAQUE-BLOCKING on iOS 16.0–16.3: taps on foot-level
+            // keypoints below the 88 pt floor cannot reach the canvas through the sheet.
+            // Users on 16.0–16.3 must manually drag the sheet further down.
+            // iOS 16.4 is the effective floor for full keypoint passthrough.
             .onChange(of: tool == .keypoints && isAthleteSelected(store: store)) { isActive in
                 withAnimation {
                     sheetDetent = isActive ? .height(88) : .fraction(0.33)
@@ -1207,6 +1319,14 @@ private struct ActivitySharePresenter: UIViewControllerRepresentable {
 ///
 /// Closures are stored directly on the VC and refreshed on every `updateUIViewController`
 /// call so stale SwiftUI captures are never used.
+///
+/// M3 — SCOPE CLAIM (regular layout only):
+/// Hardware-keyboard arrow navigation works reliably in REGULAR layout (iPad +
+/// Magic Keyboard), where no bottom sheet is presented and `KeyArrowHostVC` can
+/// hold first-responder status uncontested. In COMPACT layout the always-on bottom
+/// sheet presents a UIKit VC that wins the responder chain; `becomeFirstResponder()`
+/// on this zero-size background VC may be overridden. Compact + hardware keyboard
+/// is an on-device gate — it is NOT claimed as a working configuration.
 private struct KeyArrowInterceptor: UIViewControllerRepresentable {
     var onPrev: () -> Void
     var onNext: () -> Void
@@ -1230,7 +1350,9 @@ private struct KeyArrowInterceptor: UIViewControllerRepresentable {
     final class Coordinator: NSObject {}
 }
 
-private final class KeyArrowHostVC: UIViewController {
+/// `internal` (not `private`) so `@testable import BJJAnnotate` can access it
+/// from unit tests to verify `keyCommands` wiring and `onPrev`/`onNext` closures.
+final class KeyArrowHostVC: UIViewController {
     var onPrev: (() -> Void)?
     var onNext: (() -> Void)?
 
